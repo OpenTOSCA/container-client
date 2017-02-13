@@ -178,7 +178,7 @@ public class ContainerAPIClient {
 
 				for (int index = 0; index < jsonRefs.length(); index++) {
 					JSONObject jsonRef = jsonRefs.getJSONObject(index);
-					if (jsonRef.getInt("title") > maxIdCount) {
+					if (!jsonRef.getString("title").equals("Self") && jsonRef.getInt("title") > maxIdCount) {
 						maxIdCount = jsonRef.getInt("title");
 						maxIdUrl = jsonRef.getString("href");
 					}
@@ -186,12 +186,17 @@ public class ContainerAPIClient {
 
 				planInstanceUrl = maxIdUrl;
 			}
+			
+
+			
+			//FIXME 
+			serviceInstanceIsAvailable = true;
 		}
 
 		// /PlanInstances/1486950673724-0/State
 
 		planInstanceUrl = planInstanceUrl + "/PlanInstances/" + correlationId + "/State";
-
+		System.out.println(planInstanceUrl);
 		WebResource planInstanceResource = this.createWebResource(planInstanceUrl, null);
 
 		boolean instanceFinished = false;
@@ -208,7 +213,7 @@ public class ContainerAPIClient {
 
 			JSONObject planInstanceRespJson = new JSONObject(planInstanceResp.getEntity(String.class));
 
-			if (planInstanceRespJson.getString("State").equals("finished")) {
+			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
 				instanceFinished = true;
 			}
 		}
@@ -249,7 +254,7 @@ public class ContainerAPIClient {
 	private JSONObject getBuildPlanAsJson(final String csarName) {
 		String url = this.getMainServiceTemplateURL(csarName);
 
-		String planParameterUrl = url + this.BUILD_PLAN_PATH;
+		String planParameterUrl = url + BUILD_PLAN_PATH;
 
 		WebResource planParameterResource = this.createWebResource(planParameterUrl, null);
 		String jsonResponse = planParameterResource.accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -310,7 +315,8 @@ public class ContainerAPIClient {
 		String csarName = "HomeAssistant_Bare_Docker.csar";
 
 		try {
-			client.uploadApplication("/home/kalman/Downloads/HomeAssistant_Bare_Docker.csar");
+			//client.uploadApplication("/home/kalman/Downloads/HomeAssistant_Bare_Docker.csar");
+			//client.uploadApplication("C://Users//francoaa//Desktop//test//HomeAssistant_Bare_Docker.csar");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
