@@ -46,9 +46,11 @@ public class ContainerAPIClient {
 	}
 
 	/**
+	 * gets a list of installed applications
+	 * 
 	 * @return
 	 */
-	public List<String> getApplications() {
+	public List<Application> getApplications() {
 		List<String> csarNames = new ArrayList<String>();
 		String url = this.getContainerAPIUrl() + "/CSARs";
 		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
@@ -58,6 +60,7 @@ public class ContainerAPIClient {
 
 		JSONArray refArrayJson = respJsonObj.getJSONArray("References");
 
+
 		for (int index = 0; index < refArrayJson.length(); index++) {
 			JSONObject refJsonObj = refArrayJson.getJSONObject(index);
 			if (refJsonObj.has("title") && !refJsonObj.getString("title").equals("Self")) {
@@ -65,7 +68,12 @@ public class ContainerAPIClient {
 			}
 		}
 
-		return csarNames;
+		List<Application> apps = new ArrayList<Application>();
+		for (String csarName : csarNames) {
+			List<String> inputParams = getInputParameters(csarName);
+			apps.add(new Application(csarName, inputParams));
+		}
+		return apps;
 	}
 
 	/**

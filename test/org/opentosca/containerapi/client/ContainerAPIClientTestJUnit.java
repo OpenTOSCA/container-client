@@ -1,7 +1,5 @@
 package org.opentosca.containerapi.client;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,10 +12,14 @@ public class ContainerAPIClientTestJUnit {
 	private static ContainerAPIClient client;
 	private static String testCsarDir;
 	private static String testCsarName;
-	
+	private static String containerHost;
 	@BeforeClass
 	public static void configure() {
-		client = new ContainerAPIClient("192.168.209.199");
+		testCsarDir = "C://Users//francoaa//Desktop//test//";
+		testCsarName = "MyTinyToDo_Bare_Docker.csar";
+		containerHost = "192.168.209.230";
+		
+		client = new ContainerAPIClient(containerHost);
 		
 //		try {
 //			FileUtils.copyURLToFile(new URL("http://files.opentosca.org/csars/MyTinyToDo_Bare_Docker.csar"), testCsar);
@@ -26,9 +28,6 @@ public class ContainerAPIClientTestJUnit {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}		
-
-		testCsarDir = "C://Users//francoaa//Desktop//test//";
-		testCsarName = "MyTinyToDo_Bare_Docker.csar";
 	}
 	
 //	@AfterClass
@@ -43,10 +42,11 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void testGetApplications() {
 		// Retrieve installed applications
-		List<String> applications = client.getApplications();
+		List<Application> applications = client.getApplications();
 		System.out.println("Installed Applications: " + applications.size());
-		for (String name : applications) {
-			System.out.println(name);
+		
+		for (Application app : applications) {
+			System.out.println("Application name: " + app.getName() + " Application instantiation input: " + app.getInputParameters());
 		}
 		//assertEquals(0, applications.size());
 	}
@@ -63,19 +63,17 @@ public class ContainerAPIClientTestJUnit {
 			System.out.println("Application Metadata: " + metadata);
 			
 			// Retrieve installed applications
-			List<String> applications = client.getApplications();
+			List<Application> applications = client.getApplications();
 			assertNotEquals(0, applications.size());
-			assertEquals(testCsarName, applications.get(0));
+			assertTrue(applications.contains(applicationName));
 			
 			// Delete application
 			client.deleteApplication(applicationName);
 			
 			// Retrieve installed applications and check if it was not deleted
 			applications = client.getApplications();
-			for (String name : applications) {
-				assertNotEquals(testCsarName, name);
-			}
-			
+			assertFalse(applications.contains(applicationName));
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -93,7 +91,7 @@ public class ContainerAPIClientTestJUnit {
 			System.out.println("Application Metadata: " + metadata);
 			
 			// Retrieve installed applications
-			List<String> applications = client.getApplications();
+			List<Application> applications = client.getApplications();
 			assertNotEquals(0, applications.size());
 			
 			List<String> inputParams = client.getInputParameters(applicationName);
@@ -101,7 +99,7 @@ public class ContainerAPIClientTestJUnit {
 			
 			// Provision application
 			Map<String, String> inputs = new HashMap<String, String>();
-			inputs.put("DockerEngineURL", "tcp://192.168.209.199:2375");
+			inputs.put("DockerEngineURL", "tcp://" + containerHost + ":2375");
 			inputs.put("DockerEngineCertificate", "");
 			
 			Map<String, String> outputs = client.provisionApplication(applicationName, inputs);
@@ -123,7 +121,7 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void testProvisionApplication() {
 		Map<String, String> inputs = new HashMap<String, String>();
-		inputs.put("DockerEngineURL", "tcp://192.168.209.230:2375");
+		inputs.put("DockerEngineURL", "tcp://" + containerHost + ":2375");
 		inputs.put("DockerEngineCertificate", "");
 		
 		Map<String, String> outputs = client.provisionApplication(testCsarName, inputs);
