@@ -1,3 +1,4 @@
+package org.opentosca.containerapi.client;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,12 +24,33 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
  *
  */
 public class ContainerAPIClient {
-	public static String CONTAINER_API_URL = "http://localhost:1337/containerapi";
+
 	public static String BUILD_PLAN_PATH = "/BoundaryDefinitions/Interfaces/OpenTOSCA-Lifecycle-Interface/Operations/initiate/Plan";
 
+	private String containerAPIUrl = "";
+
+	public ContainerAPIClient() {
+		this.containerAPIUrl = "http://localhost:1337/containerapi";
+	}
+	
+	public ContainerAPIClient(final String containerHost) {
+		this.containerAPIUrl = "http://" + containerHost + ":1337/containerapi";
+	}
+	
+	public String getContainerAPIUrl() {
+		return containerAPIUrl;
+	}
+
+	public void setContainerAPIUrl(final String containerAPIUrl) {
+		this.containerAPIUrl = containerAPIUrl;
+	}
+
+	/**
+	 * @return
+	 */
 	public List<String> getApplications() {
 		List<String> csarNames = new ArrayList<String>();
-		String url = CONTAINER_API_URL + "/CSARs";
+		String url = this.getContainerAPIUrl() + "/CSARs";
 		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
 
@@ -46,24 +68,50 @@ public class ContainerAPIClient {
 		return csarNames;
 	}
 
+	/**
+	 * @param csarName
+	 * @return Aplication Metadata as a JSON object
+	 */
+	public JSONObject getCSARMetaDataAsJson(final String csarName) {
+		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
+		return new JSONObject(getCSARMetaData(csarName));
+	}
+	
+	/**
+	 * @param csarName
+	 * @return Aplication Metadata as String
+	 */
+	public String getCSARMetaData(final String csarName) {
+		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
+		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
+		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
+				.get(ClientResponse.class);
+		return resp.getEntity(String.class);
+	}
+	
 	public String getDisplayName(final String csarName) {
-		return this.getCSARMetaData(csarName).getString("displayName");
+		return this.getCSARMetaDataAsJson(csarName).getString("displayName");
 	}
 
 	public String getVersion(final String csarName) {
-		return this.getCSARMetaData(csarName).getString("version");
+		return this.getCSARMetaDataAsJson(csarName).getString("version");
 	}
 
 	public String getDescription(final String csarName) {
-		return this.getCSARMetaData(csarName).getString("description");
+		return this.getCSARMetaDataAsJson(csarName).getString("description");
 	}
 
 	public String getAuthor(final String csarName) {
-		return this.getCSARMetaData(csarName).getString("authors");
+		return this.getCSARMetaDataAsJson(csarName).getString("authors");
 	}
 
+	/**
+	 * @param filePath
+	 * @return uploaded application name or null if upload failed
+	 * @throws Exception
+	 */
 	public String uploadApplication(final String filePath) throws Exception {
-		String url = CONTAINER_API_URL + "/CSARs";
+		String url = this.getContainerAPIUrl() + "/CSARs";
 		File fileObj = new File(filePath);
 		if (fileObj != null && fileObj.exists() && fileObj.isFile()) {
 			WebResource webResource = createWebResource(url, null);
@@ -72,6 +120,7 @@ public class ContainerAPIClient {
 					MediaType.APPLICATION_OCTET_STREAM_TYPE);
 			// fileDataBodyPart.setContentDisposition(FormDataContentDisposition.name("file").fileName(fileObj.getName()).build());
 
+			@SuppressWarnings("resource")
 			final MultiPart multiPart = new FormDataMultiPart().bodyPart(fileDataBodyPart);
 			multiPart.setMediaType(MediaType.MULTIPART_FORM_DATA_TYPE);
 
@@ -99,7 +148,7 @@ public class ContainerAPIClient {
 	
 
 	public String deleteApplication(final String csarName) {
-		String url = CONTAINER_API_URL + "/CSARs/" + csarName;
+		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName;
 		WebResource webResource = createWebResource(url, null);
 		ClientResponse response = webResource.accept(MediaType.TEXT_PLAIN).delete(ClientResponse.class);
 		String ret = response.getEntity(String.class);
@@ -107,29 +156,40 @@ public class ContainerAPIClient {
 		return ret;
 	}
 
+	/**
+	 * gets required input parameters for creating an instance of the Application
+	 * @param csarName
+	 * @return list of the parameters
+	 * 
+	 */
 	public List<String> getInputParameters(final String csarName) {
 		List<String> paramNames = new ArrayList<String>();
 		JSONObject obj = this.getBuildPlanAsJson(csarName);
-
 		JSONObject planObj = obj.getJSONObject("Plan");
-
 		JSONArray jsonArrayParams = planObj.getJSONArray("InputParameters");
 
 		for (int index = 0; index < jsonArrayParams.length(); index++) {
 			JSONObject inputParam = jsonArrayParams.getJSONObject(index);
-			paramNames.add(inputParam.getString("Name"));
+			
+			paramNames.add(inputParam.getJSONObject("InputParameter").getString("Name"));
 		}
 
 		return paramNames;
 	}
 
+	/**
+	 * creates an instance of the application
+	 * @param csarName
+	 * @param params required parameters to provision the application
+	 * @return
+	 */
 	public Map<String, String> provisionApplication(final String csarName, final Map<String, String> params) {
 
 		Map<String, String> planOutputs = new HashMap<String, String>();
 
 		JSONObject planInputJsonObj = this.getBuildPlanInputJsonObject(csarName);
 
-		if (params != null) {
+		if (params != null && !params.isEmpty()) {
 			// fill up the planInput with the given values
 			JSONArray inputParamArray = planInputJsonObj.getJSONArray("InputParameters");
 			for (int index = 0; index < inputParamArray.length(); index++) {
@@ -139,17 +199,14 @@ public class ContainerAPIClient {
 				if (params.containsKey(inputParam.getString("Name"))) {
 					inputParam.put("Value", params.get(inputParam.getString("Name")));
 				}
-
 			}
-
 		}
 
 		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
 
 		int serviceInstanceCount = this.getServiceInstanceCount(csarName);
 
-		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl,
-				null);
+		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl, null);
 
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
@@ -187,14 +244,16 @@ public class ContainerAPIClient {
 				planInstanceUrl = maxIdUrl;
 			}
 			
-
-			
+		    try {
+		        Thread.sleep(10000); // 10 seconds
+		    } catch (InterruptedException e) {
+		    }
+		    
 			//FIXME 
-			serviceInstanceIsAvailable = true;
+			//serviceInstanceIsAvailable = true;
 		}
 
-		// /PlanInstances/1486950673724-0/State
-
+		// /Instances/1/PlanInstances/1486950673724-0/State
 		planInstanceUrl = planInstanceUrl + "/PlanInstances/" + correlationId + "/State";
 		System.out.println(planInstanceUrl);
 		WebResource planInstanceResource = this.createWebResource(planInstanceUrl, null);
@@ -269,7 +328,7 @@ public class ContainerAPIClient {
 	}
 
 	private String getMainServiceTemplateURL(final String csarName) {
-		String url = CONTAINER_API_URL + "/CSARs/" + csarName + "/ServiceTemplates";
+		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/ServiceTemplates";
 
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("main", "true");
@@ -289,6 +348,8 @@ public class ContainerAPIClient {
 				break;
 			}
 		}
+		// example of href: http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
+		//                  ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker
 		return href;
 	}
 
@@ -310,42 +371,35 @@ public class ContainerAPIClient {
 	}
 
 	public static void main(String[] args) {
-		ContainerAPIClient client = new ContainerAPIClient();
-		// System.out.println(client.getInstalledApplications());
-		String csarName = "HomeAssistant_Bare_Docker.csar";
+		ContainerAPIClient client = new ContainerAPIClient("192.168.209.199");
+		
+		// Retrieve installed applications
+		System.out.println(client.getApplications());
+		
+//		String csarName = "MyTinyToDo_Bare_Docker.csar";
 
-		try {
-			//client.uploadApplication("/home/kalman/Downloads/HomeAssistant_Bare_Docker.csar");
-			//client.uploadApplication("C://Users//francoaa//Desktop//test//HomeAssistant_Bare_Docker.csar");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		System.out.println("Fetch BuildPlan data: ");
-		System.out.println(client.getBuildPlanAsJson(csarName).toString());
-		System.out.println("Fetch BuildPlan Input data: ");
-		System.out.println(client.getBuildPlanInputJsonObject(csarName));
-
-		Map<String, String> inputs = new HashMap<String, String>();
-
-		inputs.put("SensorType", "asd");
-
-		client.provisionApplication(csarName, inputs);
-		// client.deleteApplication(csarName);
-
-		// System.out.println(client.getApplicationDescription("MyTinyToDo_Bare_Docker.csar"));
-		// System.out.println(client.provisionApplication("HomeAssistant_Bare_Docker.csar",
-		// null));
-		// System.out.println(client.deleteApplication("MyTinyToDo_Bare_Docker.csar"));
+		
+//		try {
+//			// Upload application
+//			client.uploadApplication("C://Users//francoaa//Desktop//test//" + csarName);
+//			
+//			// Get application metadata
+//			System.out.println(client.getCSARMetaData(csarName));
+//			
+//			// Provision application
+//			Map<String, String> inputs = new HashMap<String, String>();
+//			inputs.put("DockerEngineURL", "tcp://192.168.209.199:2375");
+//			inputs.put("DockerEngineCertificate", "");
+//			System.out.println(client.provisionApplication(csarName, inputs));
+//			
+//			//System.out.println(client.deleteApplication(csarName));
+//			
+//			// Retrieve installed applications
+//			System.out.println(client.getApplications());
+//			
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
-
-	private JSONObject getCSARMetaData(final String csarName) {
-		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
-		String url = CONTAINER_API_URL + "/CSARs/" + csarName + "/MetaData";
-		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
-				.get(ClientResponse.class);
-		return new JSONObject(resp.getEntity(String.class));
-	}
-
 }
