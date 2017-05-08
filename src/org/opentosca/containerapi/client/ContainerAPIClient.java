@@ -211,9 +211,6 @@ public class ContainerAPIClient {
 		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
 		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
 
-		// 
-		int serviceInstanceCount = this.getServiceInstanceCount(csarName);
-
 		// POST Request: Starts Plan
 		System.out.println("input properties: " + planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl, null);
@@ -239,20 +236,19 @@ public class ContainerAPIClient {
 			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 			JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
-			if (jsonObj.getJSONArray("References").length() > serviceInstanceCount) {
+			int currentCount = jsonObj.getJSONArray("References").length();
+			if (currentCount > 1) { // Self + service instance
 				JSONArray jsonRefs = jsonObj.getJSONArray("References");
-				// find highest instance id
-				int maxIdCount = -1;
-				String maxIdUrl = "";
 
 				for (int index = 0; index < jsonRefs.length(); index++) {
 					JSONObject jsonRef = jsonRefs.getJSONObject(index);
-					if (!jsonRef.getString("title").equals("Self") && jsonRef.getInt("title") > maxIdCount) {
-						maxIdCount = jsonRef.getInt("title");
-						maxIdUrl = jsonRef.getString("href");
+					
+					if (jsonRef.has("title") && !jsonRef.getString("title").equals("Self")) {
+						serviceInstanceUrl = jsonRef.getString("href");
+						serviceInstanceIsAvailable = true;
+						break;
 					}
 				}
-				serviceInstanceUrl = maxIdUrl;
 			}
 			
 		    try {
@@ -261,7 +257,6 @@ public class ContainerAPIClient {
 		    }
 		    
 			//FIXME timeout to break the loop
-			//serviceInstanceIsAvailable = true;
 		}
 
 		// /Instances/1/PlanInstances/1486950673724-0/State
@@ -281,7 +276,8 @@ public class ContainerAPIClient {
 			ClientResponse planInstanceResp = planInstanceResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 			JSONObject planInstanceRespJson = new JSONObject(planInstanceResp.getEntity(String.class));
-
+			System.out.println(planInstanceRespJson);
+			
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
 				instanceFinished = true;
 			}
