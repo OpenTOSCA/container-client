@@ -75,50 +75,45 @@ public class ContainerAPIClient {
 		}
 		return apps;
 	}
-
-	/**
-	 * @param csarName
-	 * @return Aplication Metadata as a JSON object
-	 */
-	public JSONObject getCSARMetaDataAsJson(final String csarName) {
-		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
-		return new JSONObject(getCSARMetaData(csarName));
-	}
 	
 	/**
+	 * Gets application metadata (i.e., display name, description, version, authors)
 	 * @param csarName
-	 * @return Aplication Metadata as String
+	 * @return Application Metadata as a JSON object
 	 */
-	public String getCSARMetaData(final String csarName) {
+	public JSONObject getApplicationProperties(final String csarName) {
 		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
 		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
 		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
-		return resp.getEntity(String.class);
+		return new JSONObject(resp);
 	}
 	
 	public String getDisplayName(final String csarName) {
-		return this.getCSARMetaDataAsJson(csarName).getString("displayName");
+		return this.getApplicationProperties(csarName).getString("displayName");
 	}
 
 	public String getVersion(final String csarName) {
-		return this.getCSARMetaDataAsJson(csarName).getString("version");
+		return this.getApplicationProperties(csarName).getString("version");
 	}
 
 	public String getDescription(final String csarName) {
-		return this.getCSARMetaDataAsJson(csarName).getString("description");
+		return this.getApplicationProperties(csarName).getString("description");
 	}
 
 	public String getAuthor(final String csarName) {
-		return this.getCSARMetaDataAsJson(csarName).getString("authors");
+		return this.getApplicationProperties(csarName).getString("authors");
 	}
 
 	/**
+	 * 
+	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
+	 * 
 	 * @param filePath
 	 * @return uploaded application name or null if upload failed
 	 * @throws Exception
 	 */
-	public String uploadApplication(final String filePath) throws Exception {
+	public String deployApplication(final String filePath) throws Exception {
 		String url = this.getContainerAPIUrl() + "/CSARs";
 		File fileObj = new File(filePath);
 		if (fileObj != null && fileObj.exists() && fileObj.isFile()) {
@@ -155,7 +150,13 @@ public class ContainerAPIClient {
 	
 	
 
-	public String deleteApplication(final String csarName) {
+	/**
+	 * deletes an Application (CSAR file) onto the OpenTosca ecosystem 
+	 * 
+	 * @param csarName application name
+	 * @return
+	 */
+	public String undeployApplication(final String csarName) {
 		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName;
 		WebResource webResource = createWebResource(url, null);
 		ClientResponse response = webResource.accept(MediaType.TEXT_PLAIN).delete(ClientResponse.class);
@@ -181,7 +182,6 @@ public class ContainerAPIClient {
 			
 			paramNames.add(inputParam.getJSONObject("InputParameter").getString("Name"));
 		}
-
 		return paramNames;
 	}
 
@@ -189,50 +189,54 @@ public class ContainerAPIClient {
 	 * creates an instance of the application
 	 * @param csarName
 	 * @param params required parameters to provision the application
-	 * @return
+	 * @return an Instance object
 	 */
-	public Map<String, String> provisionApplication(final String csarName, final Map<String, String> params) {
-
-		Map<String, String> planOutputs = new HashMap<String, String>();
+	public Instance createInstance(final String csarName, final Map<String, String> params) {
 
 		JSONObject planInputJsonObj = this.getBuildPlanInputJsonObject(csarName);
 
+		// fill up the planInput with the given values
 		if (params != null && !params.isEmpty()) {
-			// fill up the planInput with the given values
 			JSONArray inputParamArray = planInputJsonObj.getJSONArray("InputParameters");
 			for (int index = 0; index < inputParamArray.length(); index++) {
 
 				JSONObject inputParam = inputParamArray.getJSONObject(index).getJSONObject("InputParameter");
-
 				if (params.containsKey(inputParam.getString("Name"))) {
 					inputParam.put("Value", params.get(inputParam.getString("Name")));
 				}
 			}
 		}
 
+		// http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
+		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
 		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
 
+		// 
 		int serviceInstanceCount = this.getServiceInstanceCount(csarName);
 
+		// POST Request: Starts Plan
+		System.out.println("input properties: " + planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl, null);
-
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
 
+		// POST Request: response / plan instance URL
 		JSONObject respJsonObj = new JSONObject(response.getEntity(String.class));
-
+		
+		// http://localhost:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
+		// ServiceTemplates/%7Bhttp%3A%2F%2Fopentosca.org%2Fservicetemplates%7DMyTinyToDo_Bare_Docker/
+		// Instances?BuildPlanCorrelationId=1494237169621-0
 		String serviceInstancesResourceUrl = respJsonObj.getString("PlanURL");
-
 		String correlationId = serviceInstancesResourceUrl.split("BuildPlanCorrelationId=")[1];
-
+		
+		// Check if service instance is available
 		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl, null);
-
 		boolean serviceInstanceIsAvailable = false;
-
-		String planInstanceUrl = "";
+		String serviceInstanceUrl = "";
 		while (!serviceInstanceIsAvailable) {
-			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON)
-					.get(ClientResponse.class);
+			
+			// GET Request: check if plan instance was created
+			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 			JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
 			if (jsonObj.getJSONArray("References").length() > serviceInstanceCount) {
@@ -248,8 +252,7 @@ public class ContainerAPIClient {
 						maxIdUrl = jsonRef.getString("href");
 					}
 				}
-
-				planInstanceUrl = maxIdUrl;
+				serviceInstanceUrl = maxIdUrl;
 			}
 			
 		    try {
@@ -257,17 +260,17 @@ public class ContainerAPIClient {
 		    } catch (InterruptedException e) {
 		    }
 		    
-			//FIXME 
+			//FIXME timeout to break the loop
 			//serviceInstanceIsAvailable = true;
 		}
 
 		// /Instances/1/PlanInstances/1486950673724-0/State
-		planInstanceUrl = planInstanceUrl + "/PlanInstances/" + correlationId + "/State";
+		
+		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
 		System.out.println(planInstanceUrl);
 		WebResource planInstanceResource = this.createWebResource(planInstanceUrl, null);
 
 		boolean instanceFinished = false;
-
 		while (!instanceFinished) {
 			try {
 				Thread.sleep(2000);
@@ -275,17 +278,18 @@ public class ContainerAPIClient {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			ClientResponse planInstanceResp = planInstanceResource.accept(MediaType.APPLICATION_JSON)
-					.get(ClientResponse.class);
+			ClientResponse planInstanceResp = planInstanceResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 			JSONObject planInstanceRespJson = new JSONObject(planInstanceResp.getEntity(String.class));
 
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
 				instanceFinished = true;
 			}
+			//FIXME timeout to break the loop
 		}
 
-		String planInstanceOutputUrl = planInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
+		Map<String, String> planOutputs = new HashMap<String, String>();
+		String planInstanceOutputUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
 
 		ClientResponse planInstanceOutput = this.createWebResource(planInstanceOutputUrl, null)
 				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
@@ -302,10 +306,47 @@ public class ContainerAPIClient {
 				planOutputs.put(name, value);
 			}
 		}
-
-		return planOutputs;
+		
+		Instance createdInstance = new Instance(serviceInstanceUrl);
+		//createdInstance.setInputParameters(inputParameters);
+		createdInstance.setOutputParameters(planOutputs);
+		
+		return createdInstance;
 	}
 
+	
+	/**
+	 * terminates the given instance
+	 * 
+	 * @param instance
+	 * @return
+	 */
+	public boolean terminateInstance (final Instance instance) {
+		//FIXME code
+		return false;
+	}
+	
+	/**
+	 * gets instance properties (e.g., IP address)
+	 * 
+	 * @param instanceID
+	 * @return
+	 */
+	public Map<String, String> getInstanceProperties (String instanceID) {
+		Map<String, String> properties = new HashMap<String, String>();
+		
+		String instancePropertiesURL = instanceID + "/Properties";
+		WebResource instancePropertiesResource = this.createWebResource(instancePropertiesURL , null);
+		
+		ClientResponse  instancePropertiesResponse = instancePropertiesResource
+				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+		JSONObject jsonObj = new JSONObject(instancePropertiesResponse.getEntity(String.class));
+		
+		//FIXME code
+		return properties;
+	}
+	
 	private int getServiceInstanceCount(final String csarName) {
 		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl,

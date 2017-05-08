@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -55,11 +56,11 @@ public class ContainerAPIClientTestJUnit {
 	public void testUploadAndDeleteApplication() {
 
 		try {
-			String applicationName = client.uploadApplication(testCsarDir + testCsarName);
+			String applicationName = client.deployApplication(testCsarDir + testCsarName);
 			assertNotNull(applicationName);
 			
 			// Get application metadata
-			String metadata = client.getCSARMetaData(applicationName);
+			JSONObject metadata = client.getApplicationProperties(applicationName);
 			System.out.println("Application Metadata: " + metadata);
 			
 			// Retrieve installed applications
@@ -68,7 +69,7 @@ public class ContainerAPIClientTestJUnit {
 			assertTrue(applications.contains(applicationName));
 			
 			// Delete application
-			client.deleteApplication(applicationName);
+			client.undeployApplication(applicationName);
 			
 			// Retrieve installed applications and check if it was not deleted
 			applications = client.getApplications();
@@ -81,13 +82,13 @@ public class ContainerAPIClientTestJUnit {
 	}
 	
 	@Test
-	public void testUploadAndDeployApplication() {
+	public void testDeployApplicationAndCreateInstance() {
 		try {
-			String applicationName = client.uploadApplication(testCsarDir + testCsarName);
+			String applicationName = client.deployApplication(testCsarDir + testCsarName);
 			assertNotNull(applicationName);
 			
 			// Get application metadata
-			String metadata = client.getCSARMetaData(applicationName);
+			JSONObject metadata = client.getApplicationProperties(applicationName);
 			System.out.println("Application Metadata: " + metadata);
 			
 			// Retrieve installed applications
@@ -102,8 +103,9 @@ public class ContainerAPIClientTestJUnit {
 			inputs.put("DockerEngineURL", "tcp://" + containerHost + ":2375");
 			inputs.put("DockerEngineCertificate", "");
 			
-			Map<String, String> outputs = client.provisionApplication(applicationName, inputs);
-			System.out.println("output parameters: " + outputs);
+			Instance instance = client.createInstance(applicationName, inputs);
+			assertNotNull(instance);
+			System.out.println("output parameters: " + instance.getOutputParameters());
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -124,8 +126,9 @@ public class ContainerAPIClientTestJUnit {
 		inputs.put("DockerEngineURL", "tcp://" + containerHost + ":2375");
 		inputs.put("DockerEngineCertificate", "");
 		
-		Map<String, String> outputs = client.provisionApplication(testCsarName, inputs);
-		System.out.println("output parameters: " + outputs);
+		Instance instance = client.createInstance(testCsarName, inputs);
+		assertNotNull(instance);
+		System.out.println("output parameters: " + instance.getOutputParameters());
 	}
 	
 }
