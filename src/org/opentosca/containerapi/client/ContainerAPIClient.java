@@ -26,7 +26,8 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 public class ContainerAPIClient {
 
 	public static String BUILD_PLAN_PATH = "/BoundaryDefinitions/Interfaces/OpenTOSCA-Lifecycle-Interface/Operations/initiate/Plan";
-
+	public static String TERMINATE_PLAN_PATH = "/BoundaryDefinitions/Interfaces/OpenTOSCA-Lifecycle-Interface/Operations/terminate/Plan";
+	
 	private String containerAPIUrl = "";
 
 	public ContainerAPIClient() {
@@ -175,8 +176,12 @@ public class ContainerAPIClient {
 	 * 
 	 */
 	public List<String> getInputParameters(final String csarName) {
+		return this.getPlanInputParameters(csarName, BUILD_PLAN_PATH);
+	}
+	
+	private List<String> getPlanInputParameters(final String csarName, final String planPath) {	
 		List<String> paramNames = new ArrayList<String>();
-		JSONObject obj = this.getBuildPlanAsJson(csarName);
+		JSONObject obj = this.getPlanAsJson(csarName, planPath);
 		JSONObject planObj = obj.getJSONObject("Plan");
 		JSONArray jsonArrayParams = planObj.getJSONArray("InputParameters");
 
@@ -196,7 +201,7 @@ public class ContainerAPIClient {
 	 */
 	public Instance createInstance(final String csarName, final Map<String, String> params) {
 
-		JSONObject planInputJsonObj = this.getBuildPlanInputJsonObject(csarName);
+		JSONObject planInputJsonObj = this.getPlanAsJson(csarName, BUILD_PLAN_PATH).getJSONObject("Plan");
 
 		// fill up the planInput with the given values
 		if (params != null && !params.isEmpty()) {
@@ -263,7 +268,6 @@ public class ContainerAPIClient {
 		}
 
 		// /Instances/1/PlanInstances/1486950673724-0/State
-		
 		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
 		System.out.println(planInstanceUrl);
 		WebResource planInstanceResource = this.createWebResource(planInstanceUrl);
@@ -306,8 +310,8 @@ public class ContainerAPIClient {
 			}
 		}
 		
-		Instance createdInstance = new Instance(serviceInstanceUrl);
-		//createdInstance.setInputParameters(inputParameters);
+		Instance createdInstance = new Instance(serviceInstanceUrl, csarName);
+		//createdInstance.setInputParameters(inputParameters); //FIXME
 		createdInstance.setOutputParameters(planOutputs);
 		
 		return createdInstance;
@@ -321,7 +325,61 @@ public class ContainerAPIClient {
 	 * @return
 	 */
 	public boolean terminateInstance (final Instance instance) {
-		//FIXME code
+		JSONObject planInputJsonObj = this.getPlanAsJson(instance.getApplicationName(), TERMINATE_PLAN_PATH).getJSONObject("Plan");
+		System.out.println(planInputJsonObj);
+		
+		// fill up the planInput with the given values
+		JSONArray inputParamArray = planInputJsonObj.getJSONArray("InputParameters");
+		for (int index = 0; index < inputParamArray.length(); index++) {
+			JSONObject inputParam = inputParamArray.getJSONObject(index).getJSONObject("InputParameter");
+			
+			if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceID")) {
+				inputParam.put("Value", instance.getId());
+			} else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
+				//inputParam.put("Value", );	
+			}
+		}
+		
+		// http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
+		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
+		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(instance.getApplicationName()) + "/Instances";
+
+		// POST Request: Starts Plan
+		System.out.println("input properties: " + planInputJsonObj);
+		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
+		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
+				.post(ClientResponse.class, planInputJsonObj.toString());
+
+		// POST Request: response / plan instance URL
+		JSONObject respJsonObj = new JSONObject(response.getEntity(String.class));
+		
+		// http://localhost:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
+		// ServiceTemplates/%7Bhttp%3A%2F%2Fopentosca.org%2Fservicetemplates%7DMyTinyToDo_Bare_Docker/
+		// Instances?BuildPlanCorrelationId=1494237169621-0
+		String serviceInstancesResourceUrl = respJsonObj.getString("PlanURL");
+		
+		// Check if service instance is available
+		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl);
+		boolean serviceInstanceDeleted = false;
+		while (!serviceInstanceDeleted) {
+			
+			// GET Request: check if plan instance was created
+			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+			JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
+			int currentCount = jsonObj.getJSONArray("References").length();
+			if (currentCount < 2) { // only Self
+				serviceInstanceDeleted = true;
+				return true;
+			}
+			
+		    try {
+		        Thread.sleep(10000); // 10 seconds
+		    } catch (InterruptedException e) {
+		    }
+		    
+			//FIXME timeout to break the loop
+		}
 		return false;
 	}
 	
@@ -357,10 +415,10 @@ public class ContainerAPIClient {
 		return properties;
 	}
 
-	private JSONObject getBuildPlanAsJson(final String csarName) {
+	private JSONObject getPlanAsJson(final String csarName, final String planPath) {
 		String url = this.getMainServiceTemplateURL(csarName);
 
-		String planParameterUrl = url + BUILD_PLAN_PATH;
+		String planParameterUrl = url + planPath;
 
 		WebResource planParameterResource = this.createWebResource(planParameterUrl);
 		String jsonResponse = planParameterResource.accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -368,10 +426,6 @@ public class ContainerAPIClient {
 		JSONObject jsonObj = new JSONObject(jsonResponse);
 
 		return jsonObj;
-	}
-
-	private JSONObject getBuildPlanInputJsonObject(final String csarName) {
-		return this.getBuildPlanAsJson(csarName).getJSONObject("Plan");
 	}
 
 	private String getMainServiceTemplateURL(final String csarName) {

@@ -125,7 +125,9 @@ public class ContainerAPIClientTestJUnit {
 	
 	@Test
 	public void test6DeleteInstance() {
-		
+		//FIXME
+		boolean result = client.terminateInstance(new Instance("http://192.168.209.160:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances/1", testCsarName));
+		assertTrue(result);
 	}
 	
 	@Test

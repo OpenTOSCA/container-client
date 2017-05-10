@@ -13,11 +13,12 @@ public class Instance {
 	private Map<String, String> properties; // 
 	private Map<String, String> inputParameters; // instantiation input parameters
 	private Map<String, String> outputParameters; // instantiation output parameters
-
+	private String applicationName;
 	
-	public Instance(String id) {
+	public Instance(String id, String applicationName) {
 		super();
 		this.id = id;
+		this.applicationName = applicationName;
 	}
 
 	public String getId() {
@@ -51,6 +52,12 @@ public class Instance {
 	public void setOutputParameters(Map<String, String> outputParameters) {
 		this.outputParameters = outputParameters;
 	}
-	
-	
+
+	public String getApplicationName() {
+		return applicationName;
+	}
+
+	public void setApplicationName(String applicationName) {
+		this.applicationName = applicationName;
+	}
 }
