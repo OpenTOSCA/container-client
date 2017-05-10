@@ -53,7 +53,7 @@ public class ContainerAPIClient {
 	public List<Application> getApplications() {
 		List<String> csarNames = new ArrayList<String>();
 		String url = this.getContainerAPIUrl() + "/CSARs";
-		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
+		ClientResponse resp = this.createWebResource(url).accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
 
 		JSONObject respJsonObj = new JSONObject(resp.getEntity(String.class));
@@ -84,7 +84,7 @@ public class ContainerAPIClient {
 	public JSONObject getApplicationProperties(final String csarName) {
 		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
 		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
-		ClientResponse resp = this.createWebResource(url, null).accept(MediaType.APPLICATION_JSON)
+		ClientResponse resp = this.createWebResource(url).accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
 		return new JSONObject(resp);
 	}
@@ -110,14 +110,14 @@ public class ContainerAPIClient {
 	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
 	 * 
 	 * @param filePath
-	 * @return uploaded application name or null if upload failed
+	 * @return Application object or null if upload failed
 	 * @throws Exception
 	 */
-	public String deployApplication(final String filePath) throws Exception {
+	public Application deployApplication(final String filePath) throws Exception {
 		String url = this.getContainerAPIUrl() + "/CSARs";
 		File fileObj = new File(filePath);
 		if (fileObj != null && fileObj.exists() && fileObj.isFile()) {
-			WebResource webResource = createWebResource(url, null);
+			WebResource webResource = createWebResource(url);
 			// the file to upload, represented as FileDataBodyPart
 			FileDataBodyPart fileDataBodyPart = new FileDataBodyPart("file", fileObj,
 					MediaType.APPLICATION_OCTET_STREAM_TYPE);
@@ -140,7 +140,10 @@ public class ContainerAPIClient {
 			// parse response to get csar name
 			JSONObject obj = new JSONObject(ret);
 			String csarPath = obj.getString("csarPath");
-			return csarPath.substring(csarPath.lastIndexOf("/") + 1);
+			String csarName = csarPath.substring(csarPath.lastIndexOf("/") + 1); 
+			List<String> inputParams = this.getInputParameters(csarName);
+			Application deployedAplication = new Application(csarName, inputParams);
+			return deployedAplication;
 
 		} else {
 			System.out.println("Upload not possible");
@@ -156,9 +159,9 @@ public class ContainerAPIClient {
 	 * @param csarName application name
 	 * @return
 	 */
-	public String undeployApplication(final String csarName) {
-		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName;
-		WebResource webResource = createWebResource(url, null);
+	public String undeployApplication(final Application application) {
+		String url = this.getContainerAPIUrl() + "/CSARs/" + application.getName();
+		WebResource webResource = createWebResource(url);
 		ClientResponse response = webResource.accept(MediaType.TEXT_PLAIN).delete(ClientResponse.class);
 		String ret = response.getEntity(String.class);
 		response.close();
@@ -213,7 +216,7 @@ public class ContainerAPIClient {
 
 		// POST Request: Starts Plan
 		System.out.println("input properties: " + planInputJsonObj);
-		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl, null);
+		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
 
@@ -227,7 +230,7 @@ public class ContainerAPIClient {
 		String correlationId = serviceInstancesResourceUrl.split("BuildPlanCorrelationId=")[1];
 		
 		// Check if service instance is available
-		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl, null);
+		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl);
 		boolean serviceInstanceIsAvailable = false;
 		String serviceInstanceUrl = "";
 		while (!serviceInstanceIsAvailable) {
@@ -263,7 +266,7 @@ public class ContainerAPIClient {
 		
 		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
 		System.out.println(planInstanceUrl);
-		WebResource planInstanceResource = this.createWebResource(planInstanceUrl, null);
+		WebResource planInstanceResource = this.createWebResource(planInstanceUrl);
 
 		boolean instanceFinished = false;
 		while (!instanceFinished) {
@@ -287,7 +290,7 @@ public class ContainerAPIClient {
 		Map<String, String> planOutputs = new HashMap<String, String>();
 		String planInstanceOutputUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
 
-		ClientResponse planInstanceOutput = this.createWebResource(planInstanceOutputUrl, null)
+		ClientResponse planInstanceOutput = this.createWebResource(planInstanceOutputUrl)
 				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 		JSONObject planInstanceOutputJson = new JSONObject(planInstanceOutput.getEntity(String.class));
@@ -332,27 +335,26 @@ public class ContainerAPIClient {
 		Map<String, String> properties = new HashMap<String, String>();
 		
 		String instancePropertiesURL = instanceID + "/Properties";
-		WebResource instancePropertiesResource = this.createWebResource(instancePropertiesURL , null);
+		WebResource instancePropertiesResource = this.createWebResource(instancePropertiesURL);
 		
 		ClientResponse  instancePropertiesResponse = instancePropertiesResource
 				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 		JSONObject jsonObj = new JSONObject(instancePropertiesResponse.getEntity(String.class));
+		JSONArray jsonArrayProperties = jsonObj.getJSONArray("payload");
 		
-		//FIXME code
+		for (int index = 0; index < jsonArrayProperties.length(); index++) {
+			
+			JSONObject propertyJsonObj = jsonArrayProperties.getJSONObject(index); // property name
+			JSONArray jsonArrayPropertyNames = propertyJsonObj.names();
+			for (int indexj = 0; indexj < jsonArrayPropertyNames.length(); indexj++) {
+				String key = jsonArrayPropertyNames.getString(indexj);
+				
+				String value = propertyJsonObj.getJSONObject(key).getString("TextContent");
+				properties.put(key, value);	
+			}
+		}
 		return properties;
-	}
-	
-	private int getServiceInstanceCount(final String csarName) {
-		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
-		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl,
-				null);
-
-		ClientResponse serviceInstancesResponse = mainServiceTemplateInstancesResource
-				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
-		JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
-		return jsonObj.getJSONArray("References").length() - 1;
 	}
 
 	private JSONObject getBuildPlanAsJson(final String csarName) {
@@ -360,7 +362,7 @@ public class ContainerAPIClient {
 
 		String planParameterUrl = url + BUILD_PLAN_PATH;
 
-		WebResource planParameterResource = this.createWebResource(planParameterUrl, null);
+		WebResource planParameterResource = this.createWebResource(planParameterUrl);
 		String jsonResponse = planParameterResource.accept(MediaType.APPLICATION_JSON).get(String.class);
 
 		JSONObject jsonObj = new JSONObject(jsonResponse);
@@ -398,10 +400,11 @@ public class ContainerAPIClient {
 		return href;
 	}
 
+	private WebResource createWebResource(final String resourceName) {
+		return createWebResource(resourceName, null);
+	}
+	
 	private WebResource createWebResource(final String resourceName, final Map<String, String> queryParamsMap) {
-
-		// log.debug("Execute method at container API: createWebResource");
-
 		Client client = Client.create();
 		client.addFilter(new LoggingFilter(System.out));
 
@@ -416,35 +419,9 @@ public class ContainerAPIClient {
 	}
 
 	public static void main(String[] args) {
-		ContainerAPIClient client = new ContainerAPIClient("192.168.209.199");
+		ContainerAPIClient client = new ContainerAPIClient();
 		
 		// Retrieve installed applications
 		System.out.println(client.getApplications());
-		
-//		String csarName = "MyTinyToDo_Bare_Docker.csar";
-
-		
-//		try {
-//			// Upload application
-//			client.uploadApplication("C://Users//francoaa//Desktop//test//" + csarName);
-//			
-//			// Get application metadata
-//			System.out.println(client.getCSARMetaData(csarName));
-//			
-//			// Provision application
-//			Map<String, String> inputs = new HashMap<String, String>();
-//			inputs.put("DockerEngineURL", "tcp://192.168.209.199:2375");
-//			inputs.put("DockerEngineCertificate", "");
-//			System.out.println(client.provisionApplication(csarName, inputs));
-//			
-//			//System.out.println(client.deleteApplication(csarName));
-//			
-//			// Retrieve installed applications
-//			System.out.println(client.getApplications());
-//			
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 }
