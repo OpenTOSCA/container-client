@@ -1,0 +1,5 @@
+{
+	csarPath : "/Users/kalmankepes/Downloads/clienttests/MyTinyToDo_Bare_Docker.csar",
+	csarName : "MyTinyToDo_Bare_Docker.csar",
+	containerHost : "localhost"
+}

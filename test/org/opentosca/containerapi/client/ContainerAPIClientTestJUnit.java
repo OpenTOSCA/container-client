@@ -17,10 +17,11 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.opentosca.containerapi.client.impl.ContainerAPIClient;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) 
 public class ContainerAPIClientTestJUnit {
-	private static ContainerAPIClient client;
+	private static IContainerAPIClient client;
 	private static String testCsarPath;
 	private static String testCsarName;
 	private static String containerHost;
@@ -32,7 +33,7 @@ public class ContainerAPIClientTestJUnit {
 	public static void configure() {
 		String testParams = null;
 		try {
-			testParams = FileUtils.readFileToString(new File ("testParams.txt"), "UTF-8");
+			testParams = FileUtils.readFileToString(new File ("resources/testParams.txt"), "UTF-8");
 				
 			if (testParams != null) {
 				testCsarPath = new JSONObject (testParams).getString("csarPath");
@@ -108,7 +109,7 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void test4CreateInstance() {
 		Map<String, String> inputs = new HashMap<String, String>();
-		inputs.put("DockerEngineURL", "tcp://" + containerHost + ":2375");
+		inputs.put("DockerEngineURL", "tcp://192.168.209.230:2375");
 		inputs.put("DockerEngineCertificate", "");
 		
 		instance = client.createInstance(testCsarName, inputs);
@@ -125,8 +126,7 @@ public class ContainerAPIClientTestJUnit {
 	
 	@Test
 	public void test6DeleteInstance() {
-		//FIXME
-		boolean result = client.terminateInstance(new Instance("http://192.168.209.160:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances/1", testCsarName));
+		boolean result = client.terminateInstance(client.getApplications().get(0).getInstances().get(0));
 		assertTrue(result);
 	}
 	

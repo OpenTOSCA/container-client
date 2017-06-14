@@ -11,10 +11,12 @@ public class Application {
 	
 	private String name;
 	private List<String> inputParameters;
+	private List<Instance> instances;
 	
-	public Application(String name, List<String> inputParameters) {
+	public Application(String name, List<String> inputParameters, List<Instance> instances) {
 		this.name = name;
 		this.inputParameters = inputParameters;
+		this.instances = instances;
 	}
 	
 	public String getName() {
@@ -32,5 +34,11 @@ public class Application {
 	public void setInputParameters(List<String> inputParameters) {
 		this.inputParameters = inputParameters;
 	}
+	
+	public List<Instance> getInstances() {
+		return this.instances;
+	}
+	
+	
 	
 }
