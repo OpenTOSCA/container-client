@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.opentosca.containerapi.client.model.Application;
+import org.opentosca.containerapi.client.model.ServiceInstance;
 
 public interface IContainerAPIClient {
 
@@ -19,21 +21,6 @@ public interface IContainerAPIClient {
 	List<Application> getApplications();
 
 	/**
-	 * Gets application metadata (i.e., display name, description, version, authors)
-	 * @param csarName
-	 * @return Application Metadata as a JSON object
-	 */
-	JSONObject getApplicationProperties(String csarName);
-
-	String getDisplayName(String csarName);
-
-	String getVersion(String csarName);
-
-	String getDescription(String csarName);
-
-	String getAuthor(String csarName);
-
-	/**
 	 * 
 	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
 	 * 
@@ -44,28 +31,23 @@ public interface IContainerAPIClient {
 	Application deployApplication(String filePath) throws Exception;
 
 	/**
-	 * deletes an Application (CSAR file) onto the OpenTosca ecosystem 
+	 * deletes an Application (CSAR file) onto the OpenTosca ecosystem
 	 * 
-	 * @param csarName application name
+	 * @param csarName
+	 *            application name
 	 * @return
 	 */
 	String undeployApplication(Application application);
 
 	/**
-	 * gets required input parameters for creating an instance of the Application
-	 * @param csarName
-	 * @return list of the parameters
-	 * 
-	 */
-	List<String> getInputParameters(String csarName);
-
-	/**
 	 * creates an instance of the application
-	 * @param csarName
-	 * @param params required parameters to provision the application
+	 * 
+	 * @param application
+	 * @param params
+	 *            required parameters to provision the application
 	 * @return an Instance object
 	 */
-	Instance createInstance(String csarName, Map<String, String> params);
+	ServiceInstance createServiceInstance(Application application, Map<String, String> params);
 
 	/**
 	 * terminates the given instance
@@ -73,14 +55,16 @@ public interface IContainerAPIClient {
 	 * @param instance
 	 * @return
 	 */
-	boolean terminateInstance(Instance instance);
+	boolean terminateServiceInstance(ServiceInstance instance);
 
 	/**
-	 * gets instance properties (e.g., IP address)
+	 * Updates the given ServiceInstance object
 	 * 
-	 * @param instanceID
-	 * @return
+	 * @param serviceInstance
+	 *            a ServiceInstance available at the configured OpenTOSCA
+	 *            container
+	 * @return a ServiceInstance
 	 */
-	Map<String, String> getInstanceProperties(String instanceID);
+	ServiceInstance updateServiceInstance(ServiceInstance serviceInstance);
 
 }

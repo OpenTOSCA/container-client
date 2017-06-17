@@ -18,6 +18,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.opentosca.containerapi.client.impl.ContainerAPIClient;
+import org.opentosca.containerapi.client.model.Application;
+import org.opentosca.containerapi.client.model.ServiceInstance;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) 
 public class ContainerAPIClientTestJUnit {
@@ -26,7 +28,7 @@ public class ContainerAPIClientTestJUnit {
 	private static String testCsarName;
 	private static String containerHost;
 	
-	private static Instance instance;
+	private static ServiceInstance instance;
 	private static Application application;
 	
 	@BeforeClass
@@ -64,16 +66,20 @@ public class ContainerAPIClientTestJUnit {
 			assertNotNull(deployedApplication);
 			
 			// Get application metadata
-			JSONObject metadata = client.getApplicationProperties(deployedApplication.getName());
-			System.out.println("Application Metadata: " + metadata);
-			
+
+			System.out.println("Application DisplayName: " + deployedApplication.getDisplayName());
+			System.out.println("Application Name: " + deployedApplication.getId());
+			System.out.println("Application Author: " + deployedApplication.getAuthor());
+			System.out.println("Application Version: " + deployedApplication.getVersion());
+			System.out.println("Application Description: " + deployedApplication.getDescription());
+		
 			// Retrieve installed applications
 			List<Application> applications = client.getApplications();
 			assertNotEquals(0, applications.size());
 			
 			boolean foundApp = false;
 			for (Application app : applications) {
-				if (app.getName().equals(testCsarName)) {
+				if (app.getId().equals(testCsarName)) {
 					foundApp = true;
 					break;
 				}
@@ -94,14 +100,15 @@ public class ContainerAPIClientTestJUnit {
 		System.out.println("Installed Applications: " + applications.size());
 		
 		for (Application app : applications) {
-			System.out.println("Application name: " + app.getName() + " Application instantiation input: " + app.getInputParameters());
+			System.out.println("Application name: " + app.getId() + " Application instantiation input: " + app.getInputParameters());
 		}
 		assertEquals(1, applications.size());
 	}
 	
 	@Test
 	public void test3GetInputParameters() {
-		List<String> inputParams = client.getInputParameters(testCsarName);
+		
+		List<String> inputParams = application.getInputParameters();
 		System.out.println("input parameters: " + inputParams);
 		assertFalse(inputParams.isEmpty());
 	}
@@ -109,24 +116,23 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void test4CreateInstance() {
 		Map<String, String> inputs = new HashMap<String, String>();
-		inputs.put("DockerEngineURL", "tcp://192.168.209.230:2375");
+		inputs.put("DockerEngineURL", "tcp://192.168.99.100:2376");
 		inputs.put("DockerEngineCertificate", "");
 		
-		instance = client.createInstance(testCsarName, inputs);
+		instance = client.createServiceInstance(application, inputs);
 		assertNotNull(instance);
 		System.out.println("output parameters: " + instance.getOutputParameters());
 	}
 	
 	@Test
 	public void test5GetInstanceProperties() {
-		String instanceID = instance.getId();
-		Map<String, String> instanceProperties = client.getInstanceProperties(instanceID);
+		Map<String, String> instanceProperties = instance.getProperties();
 		System.out.println(instanceProperties);
 	}
 	
 	@Test
-	public void test6DeleteInstance() {
-		boolean result = client.terminateInstance(client.getApplications().get(0).getInstances().get(0));
+	public void test6DeleteInstance() {		
+		boolean result = client.terminateServiceInstance(instance);
 		assertTrue(result);
 	}
 	
@@ -140,7 +146,7 @@ public class ContainerAPIClientTestJUnit {
 		
 		boolean foundApp = false;
 		for (Application application : applications) {
-			if (application.getName().equals(application.getName())) {
+			if (application.getId().equals(application.getId())) {
 				foundApp = true;
 				break;
 			}

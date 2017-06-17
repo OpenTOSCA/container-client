@@ -1,4 +1,4 @@
-package org.opentosca.containerapi.client;
+package org.opentosca.containerapi.client.model;
 
 import java.util.Map;
 
@@ -7,18 +7,17 @@ import java.util.Map;
  * @author francoaa
  *
  */
-public class Instance {
+public class ServiceInstance {
 	
+	private String applicationId;
 	private String id; // url
 	private Map<String, String> properties; // 
 	private Map<String, String> inputParameters; // instantiation input parameters
 	private Map<String, String> outputParameters; // instantiation output parameters
-	private String applicationName;
 	
-	public Instance(String id, String applicationName) {
-		super();
+	public ServiceInstance(String applicationId, String id) {
 		this.id = id;
-		this.applicationName = applicationName;
+		this.applicationId = applicationId;
 	}
 
 	public String getId() {
@@ -53,11 +52,7 @@ public class Instance {
 		this.outputParameters = outputParameters;
 	}
 
-	public String getApplicationName() {
-		return applicationName;
-	}
-
-	public void setApplicationName(String applicationName) {
-		this.applicationName = applicationName;
+	public String getApplicationId() {
+		return this.applicationId;
 	}
 }

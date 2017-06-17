@@ -13,9 +13,9 @@ import javax.ws.rs.core.MediaType;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.opentosca.containerapi.client.Application;
 import org.opentosca.containerapi.client.IContainerAPIClient;
-import org.opentosca.containerapi.client.Instance;
+import org.opentosca.containerapi.client.model.Application;
+import org.opentosca.containerapi.client.model.ServiceInstance;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -98,7 +98,13 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		for (String csarName : csarNames) {
 			List<String> inputParams = getInputParameters(csarName);
 
-			apps.add(new Application(csarName, inputParams, this.getInstances(csarName)));
+			// String name, List<String> inputParameters, List<ServiceInstance>
+			// instances, String displayName,
+			// String version, String description, String author
+			JSONObject appProps = this.getApplicationProperties(csarName);
+
+			apps.add(new Application(csarName, inputParams, new ArrayList<String>(), this.getDisplayName(appProps),
+					this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps)));
 		}
 		return apps;
 	}
@@ -109,60 +115,48 @@ public class ContainerAPIClient implements IContainerAPIClient {
 	 * @see org.opentosca.containerapi.client.IContainerAPIClient#
 	 * getApplicationProperties(java.lang.String)
 	 */
-	@Override
-	public JSONObject getApplicationProperties(final String csarName) {
+
+	private JSONObject getApplicationProperties(final String csarName) {
 		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
 		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
 		ClientResponse resp = this.createWebResource(url).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		return new JSONObject(resp);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getDisplayName(java
-	 * .lang.String)
-	 */
-	@Override
-	public String getDisplayName(final String csarName) {
+	private String getDisplayName(final String csarName) {
 		return this.getApplicationProperties(csarName).getString("displayName");
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getVersion(java.
-	 * lang.String)
-	 */
-	@Override
-	public String getVersion(final String csarName) {
-		return this.getApplicationProperties(csarName).getString("version");
+	private String getDisplayName(JSONObject appProps) {
+		if (appProps.has("displayName")) {
+			return appProps.getString("displayName");
+		} else {
+			return null;
+		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getDescription(java
-	 * .lang.String)
-	 */
-	@Override
-	public String getDescription(final String csarName) {
-		return this.getApplicationProperties(csarName).getString("description");
+	private String getVersion(JSONObject appProps) {
+		if (appProps.has("version")) {
+			return appProps.getString("version");
+		} else {
+			return null;
+		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getAuthor(java.lang
-	 * .String)
-	 */
-	@Override
-	public String getAuthor(final String csarName) {
-		return this.getApplicationProperties(csarName).getString("authors");
+	private String getDescription(JSONObject appProps) {
+		if (appProps.has("description")) {
+			return appProps.getString("description");
+		} else {
+			return null;
+		}
+	}
+
+	private String getAuthor(JSONObject appProps) {
+		if (appProps.has("authors")) {
+			return appProps.getString("authors");
+		} else {
+			return null;
+		}
 	}
 
 	/*
@@ -197,14 +191,19 @@ public class ContainerAPIClient implements IContainerAPIClient {
 			String ret = response.getEntity(String.class);
 			response.close();
 
-			// http://localhost:1337/containerapi/CSARControl/MyTinyToDo_Bare_Docker.csar
-
 			// parse response to get csar name
 			JSONObject obj = new JSONObject(ret);
 			String csarPath = obj.getString("csarPath");
 			String csarName = csarPath.substring(csarPath.lastIndexOf("/") + 1);
 			List<String> inputParams = this.getInputParameters(csarName);
-			Application deployedAplication = new Application(csarName, inputParams, new ArrayList<Instance>());
+
+			// String name, List<String> inputParameters, List<ServiceInstance>
+			// instances, String displayName,
+			// String version, String description, String author
+			JSONObject appProps = this.getApplicationProperties(csarName);
+			Application deployedAplication = new Application(csarName, inputParams, new ArrayList<String>(),
+					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
+					this.getAuthor(appProps));
 
 			while (!arePlansDeployed(deployedAplication)) {
 				try {
@@ -223,7 +222,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 
 	private boolean arePlansDeployed(Application application) {
 		WebResource csarControlResource = this
-				.createWebResource(this.getContainerAPIUrl() + "/CSARControl/" + application.getName());
+				.createWebResource(this.getContainerAPIUrl() + "/CSARControl/" + application.getId());
 
 		Builder builder = csarControlResource.accept(MediaType.TEXT_PLAIN);
 
@@ -245,7 +244,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 	 */
 	@Override
 	public String undeployApplication(final Application application) {
-		String url = this.getContainerAPIUrl() + "/CSARs/" + application.getName();
+		String url = this.getContainerAPIUrl() + "/CSARs/" + application.getId();
 		WebResource webResource = createWebResource(url);
 		ClientResponse response = webResource.accept(MediaType.TEXT_PLAIN).delete(ClientResponse.class);
 		String ret = response.getEntity(String.class);
@@ -253,15 +252,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		return ret;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getInputParameters(
-	 * java.lang.String)
-	 */
-	@Override
-	public List<String> getInputParameters(final String csarName) {
+	private List<String> getInputParameters(final String csarName) {
 		return this.getPlanInputParameters(csarName, BUILD_PLAN_PATH);
 	}
 
@@ -287,14 +278,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 	 * .lang.String, java.util.Map)
 	 */
 	@Override
-	public Instance createInstance(final String csarName, final Map<String, String> params) {
-
-		JSONObject planInputJsonObj = this.getPlanAsJson(csarName, BUILD_PLAN_PATH).getJSONObject("Plan");
-
-		// // InputParameters":[
-		// {"InputParameter":{"Name":"instanceDataAPIUrl","Type":"String","Required":"yes"}},
-		// {"InputParameter":{"Name":"csarEntrypoint","Type":"String","Required":"yes"}},
-		// {"InputParameter":{"Name":"CorrelationID","Type":"String","Required":"yes"}}
+	public ServiceInstance createServiceInstance(final Application application, final Map<String, String> params) {
+		JSONObject planInputJsonObj = this.getPlanAsJson(application.getId(), BUILD_PLAN_PATH).getJSONObject("Plan");
 
 		// fill up the planInput with the given values
 		if (params != null && !params.isEmpty()) {
@@ -305,7 +290,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 				if (params.containsKey(inputParam.getString("Name"))) {
 					inputParam.put("Value", params.get(inputParam.getString("Name")));
 				} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
-					inputParam.put("Value", this.getOpenTOSCAParamValue(inputParam.getString("Name"), csarName));
+					inputParam.put("Value",
+							this.getOpenTOSCAParamValue(inputParam.getString("Name"), application.getId()));
 				}
 
 			}
@@ -313,7 +299,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 
 		// http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
 		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
-		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(csarName) + "/Instances";
+		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(application.getId()) + "/Instances";
 
 		// POST Request: Starts Plan
 		System.out.println("input properties: " + planInputJsonObj);
@@ -363,6 +349,11 @@ public class ContainerAPIClient implements IContainerAPIClient {
 
 			// FIXME timeout to break the loop
 		}
+		
+		try {
+			Thread.sleep(1000); // 10 seconds
+		} catch (InterruptedException e) {
+		}
 
 		// /Instances/1/PlanInstances/1486950673724-0/State
 		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
@@ -380,7 +371,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 			ClientResponse planInstanceResp = planInstanceResource.accept(MediaType.APPLICATION_JSON)
 					.get(ClientResponse.class);
 
-			JSONObject planInstanceRespJson = new JSONObject(planInstanceResp.getEntity(String.class));
+			String responseString = planInstanceResp.getEntity(String.class);
+			JSONObject planInstanceRespJson = new JSONObject(responseString);
 			System.out.println(planInstanceRespJson);
 
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
@@ -408,7 +400,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 			}
 		}
 
-		Instance createdInstance = new Instance(serviceInstanceUrl, csarName);
+		ServiceInstance createdInstance = new ServiceInstance(application.getId(),serviceInstanceUrl);
 		// createdInstance.setInputParameters(inputParameters); //FIXME
 		createdInstance.setOutputParameters(planOutputs);
 
@@ -423,8 +415,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 	 * org.opentosca.containerapi.client.Instance)
 	 */
 	@Override
-	public boolean terminateInstance(final Instance instance) {
-		JSONObject planInputJsonObj = this.getPlanAsJson(instance.getApplicationName(), TERMINATE_PLAN_PATH)
+	public boolean terminateServiceInstance(final ServiceInstance instance) {
+		JSONObject planInputJsonObj = this.getPlanAsJson(instance.getApplicationId(), TERMINATE_PLAN_PATH)
 				.getJSONObject("Plan");
 		System.out.println(planInputJsonObj);
 
@@ -437,13 +429,13 @@ public class ContainerAPIClient implements IContainerAPIClient {
 				inputParam.put("Value", instance.getId());
 			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
-						this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationName()));
+						this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()));
 			}
 		}
 
 		// http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
 		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
-		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(instance.getApplicationName())
+		String mainServiceTemplateInstancesUrl = this.getMainServiceTemplateURL(instance.getApplicationId())
 				+ "/Instances";
 
 		// POST Request: Starts Plan
@@ -460,8 +452,13 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		// Instances?BuildPlanCorrelationId=1494237169621-0
 		String serviceInstancesResourceUrl = respJsonObj.getString("PlanURL");
 
+		try {
+			Thread.sleep(5000); // 5 seconds
+		} catch (InterruptedException e) {
+		}
+		
 		// Check if service instance is available
-		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl);
+		WebResource referencesResource = this.createWebResource(instance.getId());
 		boolean serviceInstanceDeleted = false;
 		while (!serviceInstanceDeleted) {
 
@@ -479,16 +476,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 
 			}
 
-//			JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
-//			int currentCount = jsonObj.getJSONArray("References").length();
-//			if (currentCount < 2) { // only Self
-//				serviceInstanceDeleted = true;
-//				return true;
-//			}
-
-			// FIXME timeout to break the loop
 		}
-		return false;
+		return true;
 	}
 
 	/*
@@ -497,8 +486,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 	 * @see org.opentosca.containerapi.client.IContainerAPIClient#
 	 * getInstanceProperties(java.lang.String)
 	 */
-	@Override
-	public Map<String, String> getInstanceProperties(String instanceID) {
+
+	private Map<String, String> getInstanceProperties(String instanceID) {
 		Map<String, String> properties = new HashMap<String, String>();
 
 		String instancePropertiesURL = instanceID + "/Properties";
@@ -583,13 +572,6 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		return webResource;
 	}
 
-	public static void main(String[] args) {
-		IContainerAPIClient client = new ContainerAPIClient();
-
-		// Retrieve installed applications
-		System.out.println(client.getApplications());
-	}
-
 	private boolean isOpenTOSCAParam(String paramName) {
 		return Arrays.asList(this.opentoscaParameters).contains(paramName);
 	}
@@ -610,8 +592,8 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		}
 	}
 
-	private List<Instance> getInstances(String csarName) {
-		List<Instance> instances = new ArrayList<Instance>();
+	private List<ServiceInstance> getInstances(String csarName) {
+		List<ServiceInstance> instances = new ArrayList<ServiceInstance>();
 
 		String serviceTemplateURL = this.getMainServiceTemplateURL(csarName);
 		WebResource serviceTemplateInstancesResource = this.createWebResource(serviceTemplateURL + "/Instances");
@@ -626,11 +608,17 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
 			if (!obj.getString("title").equals("Self")) {
-				instances.add(new Instance(obj.getString("href"), csarName));
+				instances.add(new ServiceInstance(obj.getString("href"), csarName));
 			}
 		}
 
 		return instances;
+	}
+
+	@Override
+	public ServiceInstance updateServiceInstance(ServiceInstance serviceInstance) {
+
+		return null;
 	}
 
 }
