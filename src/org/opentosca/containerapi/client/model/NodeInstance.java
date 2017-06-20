@@ -9,7 +9,7 @@ public class NodeInstance {
 	private final Map<String, String> properties;
 	private final String state;
 
-	NodeInstance(String serviceInstanceId, String id, Map<String, String> properties, String state) {
+	public NodeInstance(String serviceInstanceId, String id, Map<String, String> properties, String state) {
 		this.serviceInstance = serviceInstanceId;
 		this.id = id;
 		this.properties = properties;

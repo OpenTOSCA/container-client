@@ -1,6 +1,9 @@
 package org.opentosca.containerapi.client.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,12 +13,21 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.soap.Node;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.IContainerAPIClient;
 import org.opentosca.containerapi.client.model.Application;
+import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -349,7 +361,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 
 			// FIXME timeout to break the loop
 		}
-		
+
 		try {
 			Thread.sleep(1000); // 10 seconds
 		} catch (InterruptedException e) {
@@ -400,9 +412,10 @@ public class ContainerAPIClient implements IContainerAPIClient {
 			}
 		}
 
-		ServiceInstance createdInstance = new ServiceInstance(application.getId(),serviceInstanceUrl);
+		ServiceInstance createdInstance = new ServiceInstance(application.getId(), serviceInstanceUrl,
+				this.getInstanceProperties(serviceInstanceUrl));
 		// createdInstance.setInputParameters(inputParameters); //FIXME
-		createdInstance.setOutputParameters(planOutputs);
+		createdInstance.setPlanOutputParameters(planOutputs);
 
 		return createdInstance;
 	}
@@ -456,7 +469,7 @@ public class ContainerAPIClient implements IContainerAPIClient {
 			Thread.sleep(5000); // 5 seconds
 		} catch (InterruptedException e) {
 		}
-		
+
 		// Check if service instance is available
 		WebResource referencesResource = this.createWebResource(instance.getId());
 		boolean serviceInstanceDeleted = false;
@@ -608,17 +621,163 @@ public class ContainerAPIClient implements IContainerAPIClient {
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
 			if (!obj.getString("title").equals("Self")) {
-				instances.add(new ServiceInstance(obj.getString("href"), csarName));
+				instances.add(this.getServiceInstance(csarName, obj.getString("href")));
 			}
 		}
 
 		return instances;
 	}
 
+	private ServiceInstance getServiceInstance(String applicationId, String serviceInstanceUrl) {
+
+		return new ServiceInstance(applicationId, serviceInstanceUrl, this.getInstanceProperties(serviceInstanceUrl));
+	}
+
 	@Override
 	public ServiceInstance updateServiceInstance(ServiceInstance serviceInstance) {
+		return this.getServiceInstance(serviceInstance.getApplicationId(), serviceInstance.getId());
+	}
 
+	@Override
+	public List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance) {
+		List<NodeInstance> nodeInstances = new ArrayList<NodeInstance>();
+		List<String> nodeTemplateUrls = this.getNodeTemplateURLs(serviceInstance);
+		
+		for(String nodeTemplateUrl : nodeTemplateUrls) {
+			nodeInstances.addAll(this.getNodeInstancesFromNodeTemplateUrl(serviceInstance.getApplicationId(), nodeTemplateUrl));
+			
+		}
+
+		return nodeInstances;
+	}
+	
+	private List<NodeInstance> getNodeInstancesFromNodeTemplateUrl(String serviceInstanceId, String nodeTemplateUrl) {
+		List<NodeInstance> nodeInstances = new ArrayList<NodeInstance>();
+		
+		
+		WebResource nodeTemplateInstancesResource = this.createWebResource(nodeTemplateUrl + "/Instances");
+		ClientResponse nodeTemplateInstancesResponse = nodeTemplateInstancesResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		JSONObject jsonObj = new JSONObject(nodeTemplateInstancesResponse.getEntity(String.class));
+		
+		Iterator iter = jsonObj.getJSONArray("References").iterator();
+		
+		while(iter.hasNext()) {
+			JSONObject obj = (JSONObject) iter.next();
+			if (!obj.getString("title").equals("Self")) {
+				nodeInstances.add(this.getNodeInstanceFromNodeInstanceUrl(serviceInstanceId, obj.getString("href")));
+			}
+		}
+		
+		return nodeInstances;
+	}
+	
+	private NodeInstance getNodeInstanceFromNodeInstanceUrl(String serviceInstanceId, String nodeInstanceUrl) {
+			
+		try {
+			return new NodeInstance(serviceInstanceId, nodeInstanceUrl, this.getNodeInstanceProperties(nodeInstanceUrl), this.getNodeInstanceState(nodeInstanceUrl));
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new NodeInstance(serviceInstanceId, nodeInstanceUrl, new HashMap<String, String>(), this.getNodeInstanceState(nodeInstanceUrl));
+	}
+	
+	private String getNodeInstanceState(String nodeInstanceUrl) {
+		WebResource nodeInstanceStateResource = this.createWebResource(nodeInstanceUrl + "/State");
+		ClientResponse nodeInstanceStateResponse = nodeInstanceStateResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		
+		JSONObject obj = new JSONObject(nodeInstanceStateResponse.getEntity(String.class));
+		
+		return obj.getString("state");
+	}
+	
+	private Map<String,String> getNodeInstanceProperties(String nodeInstanceUrl) throws SAXException, IOException, ParserConfigurationException {
+		WebResource nodeInstancePropertiesResource = this.createWebResource(nodeInstanceUrl + "/Properties");
+		
+		ClientResponse nodeInstancePropertiesResponse= nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+		
+		String responseBody = nodeInstancePropertiesResponse.getEntity(String.class);
+		
+		DocumentBuilderFactory fac=  DocumentBuilderFactory.newInstance();
+		fac.setNamespaceAware(true);
+		fac.setIgnoringComments(true);
+		
+		
+		InputSource sorce = new InputSource(new StringReader(responseBody));
+		
+		Document doc = fac.newDocumentBuilder().parse(sorce);
+		
+		Element properties = this.findPropertiesElement(doc.getDocumentElement());
+		
+		Map<String,String> propMap = this.readPropertiesElementToMap(properties);
+		
+		return propMap;
+	}
+	
+	private Map<String,String> readPropertiesElementToMap(Element propertiesElement) {
+		Map<String,String> propMap = new HashMap<String,String>();
+		
+		NodeList childNodes = propertiesElement.getChildNodes();
+		
+		for(int i = 0 ; i <childNodes.getLength(); i++) {
+			if(childNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
+				Element propChildElement = (Element) childNodes.item(i);
+				
+				String key = propChildElement.getLocalName();
+				String value = propChildElement.getTextContent();
+				
+				propMap.put(key, value);
+			}
+		}
+		
+		return propMap;
+	}
+	
+	private Element findPropertiesElement(Element element) {
+		if(element.getLocalName().equals("Properties")){
+			return element;
+		} else {
+			NodeList nodeList = element.getChildNodes();
+			
+			for(int i = 0; i < nodeList.getLength(); i++){
+				if(nodeList.item(i).getNodeType() == Node.ELEMENT_NODE){
+					Element childElem = (Element)nodeList.item(i);
+					return this.findPropertiesElement(element);
+				}
+			}			
+		}
 		return null;
+	}
+	
+	
+
+	private List<String> getNodeTemplateURLs(ServiceInstance serviceInstance) {
+		List<String> urls = new ArrayList<String>();
+
+		WebResource serviceInstanceNodeTemplatesResource = this
+				.createWebResource(serviceInstance.getId() + "/NodeTemplates");
+
+		ClientResponse serviceInstanceNodeTemplatesResponse = serviceInstanceNodeTemplatesResource
+				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+		JSONObject jsonObj = new JSONObject(serviceInstanceNodeTemplatesResponse.getEntity(String.class));
+
+		Iterator iter = jsonObj.getJSONArray("References").iterator();
+
+		while (iter.hasNext()) {
+			JSONObject obj = (JSONObject) iter.next();
+			if (!obj.getString("title").equals("Self")) {
+				urls.add(obj.getString("href"));
+			}
+		}
+
+		return urls;
 	}
 
 }

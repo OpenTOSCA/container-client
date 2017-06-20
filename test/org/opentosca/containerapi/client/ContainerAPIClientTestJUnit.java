@@ -35,7 +35,7 @@ public class ContainerAPIClientTestJUnit {
 	public static void configure() {
 		String testParams = null;
 		try {
-			testParams = FileUtils.readFileToString(new File ("resources/testParams.txt"), "UTF-8");
+			testParams = FileUtils.readFileToString(new File ("resources/testParams.json"), "UTF-8");
 				
 			if (testParams != null) {
 				testCsarPath = new JSONObject (testParams).getString("csarPath");
@@ -116,12 +116,13 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void test4CreateInstance() {
 		Map<String, String> inputs = new HashMap<String, String>();
-		inputs.put("DockerEngineURL", "tcp://192.168.99.100:2376");
+		inputs.put("DockerEngineURL", "tcp://localhost:2375");
 		inputs.put("DockerEngineCertificate", "");
+		inputs.put("ApplicationPort", "80");
 		
 		instance = client.createServiceInstance(application, inputs);
 		assertNotNull(instance);
-		System.out.println("output parameters: " + instance.getOutputParameters());
+		System.out.println("output parameters: " + instance.getPlanOutputParameters());
 	}
 	
 	@Test
