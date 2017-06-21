@@ -45,10 +45,6 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
  */
 public class ContainerAPIClient extends AbstractContainerAPIClient implements IContainerAPIClient {
 
-	String containerAPIUrl = "";
-
-	private String[] opentoscaParameters = { "instanceDataAPIUrl", "csarEntrypoint", "CorrelationID" };
-
 	public ContainerAPIClient() {
 		this.containerAPIUrl = "http://localhost:1337/containerapi";
 	}
