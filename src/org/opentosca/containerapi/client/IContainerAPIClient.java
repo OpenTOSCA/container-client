@@ -6,6 +6,7 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.NodeInstance;
+import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 
 public interface IContainerAPIClient {
@@ -67,14 +68,44 @@ public interface IContainerAPIClient {
 	 * @return a ServiceInstance
 	 */
 	ServiceInstance updateServiceInstance(ServiceInstance serviceInstance);
-
+	
+	
 	/**
-	 * Returns a list of all node instances of given service instance
+	 * Updates the given Node Instance object
+	 * 
+	 * @param nodeInstance
+	 *            a Node Instance available at the configured OpenTOSCA
+	 *            container
+	 * @return a Node Instance
+	 */
+	NodeInstance updateNodeInstance(NodeInstance nodeInstance);
+	
+	/**
+	 * Updates the given Relation Instance object
+	 * 
+	 * @param relationInstance
+	 *            a Relation Instance available at the configured OpenTOSCA
+	 *            container
+	 * @return a Relation Instance
+	 */
+	RelationInstance updateRelationInstance(RelationInstance relationInstance);
+	
+	/**
+	 * Returns a list of all node instances of the given service instance
 	 * 
 	 * @param serviceInstance
 	 *            an available service instance
 	 * @return a list of node instances
 	 */
 	List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance);
+	
+	/**
+	 * Returns a list of all relation instances of the given service instance
+	 * 
+	 * @param serviceInstance
+	 *            an available service instance
+	 * @return a list of relation instances
+	 */
+	List<RelationInstance> getRelationInstances(ServiceInstance serviceInstance);
 
 }
