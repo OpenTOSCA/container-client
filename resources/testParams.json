@@ -1,5 +1,19 @@
 {
-	csarPath : "/Users/kalmankepes/Downloads/clienttests/MyTinyToDo_Bare_Docker.csar",
-	csarName : "MyTinyToDo_Bare_Docker.csar",
-	containerHost : "localhost"
+	"csarPath" : "C:\\Users\\francoaa\\Desktop\\test\\MyTinyToDo_Bare_Docker.csar",
+	"containerHost" : "localhost",
+	"csarsTests" : [
+	{
+		"csarName" : "MyTinyToDo_Bare_Docker.csar",
+	 	"inputParams": [
+	 	{
+	 		"DockerEngineURL" : "tcp://localhost:2375",
+	 		"DockerEngineCertificate": "",
+	 		"ApplicationPort": "80"
+	 	}]
+	},
+	{
+		"csarName" : "MQTT_RandomDataPublisher_VSphere_SmartService.csar",
+	 	"inputParams": []
+	}
+	]
 }

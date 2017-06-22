@@ -8,10 +8,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -26,8 +28,8 @@ public class ContainerAPIClientTestJUnit {
 	private static IContainerAPIClient client;
 	private static String testCsarPath;
 	private static String testCsarName;
+	private static Map<String, String> testInputParams;
 	private static String containerHost;
-	
 	private static ServiceInstance instance;
 	private static Application application;
 	
@@ -39,9 +41,31 @@ public class ContainerAPIClientTestJUnit {
 				
 			if (testParams != null) {
 				testCsarPath = new JSONObject (testParams).getString("csarPath");
-				testCsarName = new JSONObject (testParams).getString("csarName");
+				//testCsarName = new JSONObject (testParams).getString("csarName");
 				containerHost = new JSONObject (testParams).getString("containerHost");
+				JSONArray csarsTests = new JSONObject (testParams).getJSONArray("csarsTests");
+				
+				for (int i = 0, size = csarsTests.length(); i < size; i++) {
+					JSONObject csarTestData = csarsTests.getJSONObject(i);
+					testCsarName = csarTestData.getString("csarName");
 
+					JSONArray inputParams = csarTestData.getJSONArray("inputParams");
+					testInputParams = new HashMap<String, String>();
+					for (int j = 0, sizej =  inputParams.length(); j < sizej; j++) {
+						JSONObject input = inputParams.getJSONObject(j);
+						
+						Iterator<String> it = input.keys();
+						while (it.hasNext()) {
+							String inputName = (String) it.next();
+							testInputParams.put(inputName, input.getString(inputName));
+						}						
+					}
+										
+					//FIXME
+					break;
+				}
+				
+				
 			} else {
 				// Fill for testing if testParams.txt not existing
 				testCsarPath = "";
@@ -50,7 +74,8 @@ public class ContainerAPIClientTestJUnit {
 			}
 			System.out.println("Running tests with following configuration:");
 			System.out.println("Csar file: "+ testCsarPath);
-			System.out.println("Container Host: "+ containerHost);	
+			System.out.println("Container Host: "+ containerHost);
+			System.out.println("Input paramers: " + testInputParams.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,12 +140,13 @@ public class ContainerAPIClientTestJUnit {
 	
 	@Test
 	public void test4CreateInstance() {
-		Map<String, String> inputs = new HashMap<String, String>();
-		inputs.put("DockerEngineURL", "tcp://localhost:2375");
-		inputs.put("DockerEngineCertificate", "");
-		inputs.put("ApplicationPort", "80");
+		//Map<String, String> inputs = new HashMap<String, String>();
 		
-		instance = client.createServiceInstance(application, inputs);
+		//inputs.put("DockerEngineURL", "tcp://localhost:2375");
+		//inputs.put("DockerEngineCertificate", "");
+		//inputs.put("ApplicationPort", "80");
+		
+		instance = client.createServiceInstance(application, testInputParams);
 		assertNotNull(instance);
 		System.out.println("output parameters: " + instance.getPlanOutputParameters());
 	}
