@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -18,39 +19,45 @@ import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.containerapi.client.impl.ContainerAPIClient;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING) 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(Parameterized.class)
 public class ContainerAPIClientTestJUnit {
 	private static IContainerAPIClient client;
 	private static String testCsarPath;
-	private static String testCsarName;
-	private static Map<String, String> testInputParams;
 	private static String containerHost;
+	
 	private static ServiceInstance instance;
 	private static Application application;
 	
-	@BeforeClass
-	public static void configure() {
+	private static RunParams runParams; // updated for each csar
+	
+    @Parameterized.Parameters
+    public static List<RunParams> parameters() {
+    	List<RunParams> params = new ArrayList<RunParams>();
+    	
 		String testParams = null;
 		try {
 			testParams = FileUtils.readFileToString(new File ("resources/testParams.json"), "UTF-8");
 				
 			if (testParams != null) {
 				testCsarPath = new JSONObject (testParams).getString("csarPath");
-				//testCsarName = new JSONObject (testParams).getString("csarName");
 				containerHost = new JSONObject (testParams).getString("containerHost");
 				JSONArray csarsTests = new JSONObject (testParams).getJSONArray("csarsTests");
 				
 				for (int i = 0, size = csarsTests.length(); i < size; i++) {
+
 					JSONObject csarTestData = csarsTests.getJSONObject(i);
-					testCsarName = csarTestData.getString("csarName");
+					String testCsarName = csarTestData.getString("csarName");
 
 					JSONArray inputParams = csarTestData.getJSONArray("inputParams");
-					testInputParams = new HashMap<String, String>();
+					Map<String, String> testInputParams = new HashMap<String, String>();
 					for (int j = 0, sizej =  inputParams.length(); j < sizej; j++) {
 						JSONObject input = inputParams.getJSONObject(j);
 						
@@ -60,34 +67,38 @@ public class ContainerAPIClientTestJUnit {
 							testInputParams.put(inputName, input.getString(inputName));
 						}						
 					}
-										
-					//FIXME
-					break;
+			    	params.add(new RunParams(testCsarName, testInputParams));
 				}
-				
 				
 			} else {
 				// Fill for testing if testParams.txt not existing
 				testCsarPath = "";
-				testCsarName = "";
 				containerHost = "";
 			}
 			System.out.println("Running tests with following configuration:");
-			System.out.println("Csar file: "+ testCsarPath);
+			System.out.println("Csar files path: " + testCsarPath);
 			System.out.println("Container Host: "+ containerHost);
-			System.out.println("Input paramers: " + testInputParams.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		}  	
+        return params;
+    }
+    
+    public ContainerAPIClientTestJUnit(RunParams params) {
+    	runParams = params;
+    }
+    
+	@BeforeClass
+	public static void configure() {	
 		client = new ContainerAPIClient(containerHost);	
 	}
 	
 	@Test
 	public void test1DeployApplication() {
 		try {
-			Application deployedApplication = client.deployApplication(testCsarPath);
+			String pathToCsar = testCsarPath + File.separator + runParams.testCsarName;
+			Application deployedApplication = client.deployApplication(pathToCsar);
 			assertNotNull(deployedApplication);
 			
 			// Get application metadata
@@ -104,7 +115,7 @@ public class ContainerAPIClientTestJUnit {
 			
 			boolean foundApp = false;
 			for (Application app : applications) {
-				if (app.getId().equals(testCsarName)) {
+				if (app.getId().equals(runParams.testCsarName)) {
 					foundApp = true;
 					break;
 				}
@@ -121,6 +132,7 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void test2GetApplications() {
 		// Retrieve installed applications
+		System.out.println(runParams.testCsarName);
 		List<Application> applications = client.getApplications();
 		System.out.println("Installed Applications: " + applications.size());
 		
@@ -139,14 +151,8 @@ public class ContainerAPIClientTestJUnit {
 	}
 	
 	@Test
-	public void test4CreateInstance() {
-		//Map<String, String> inputs = new HashMap<String, String>();
-		
-		//inputs.put("DockerEngineURL", "tcp://localhost:2375");
-		//inputs.put("DockerEngineCertificate", "");
-		//inputs.put("ApplicationPort", "80");
-		
-		instance = client.createServiceInstance(application, testInputParams);
+	public void test4CreateInstance() {	
+		instance = client.createServiceInstance(application, runParams.testInputParams);
 		assertNotNull(instance);
 		System.out.println("output parameters: " + instance.getPlanOutputParameters());
 	}

@@ -1,5 +1,5 @@
 {
-	"csarPath" : "C:\\Users\\francoaa\\Desktop\\test\\MyTinyToDo_Bare_Docker.csar",
+	"csarPath" : "C:\\Users\\francoaa\\Desktop\\test",
 	"containerHost" : "localhost",
 	"csarsTests" : [
 	{
@@ -13,7 +13,12 @@
 	},
 	{
 		"csarName" : "MQTT_RandomDataPublisher_VSphere_SmartService.csar",
-	 	"inputParams": []
+	 	"inputParams": [
+	 	{
+	 		"MQTTTopicName": "",
+	 		"HypervisorUserName": "",
+	 		"HypervisorUserPassword": ""
+	 	}]
 	}
 	]
 }
