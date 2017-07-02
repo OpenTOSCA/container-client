@@ -115,16 +115,13 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 		String correlationId = serviceInstancesResourceUrl.split("BuildPlanCorrelationId=")[1];
 
 		// Check if service instance is available
-		WebResource referencesResource = this.createWebResource(serviceInstancesResourceUrl);
 		boolean serviceInstanceIsAvailable = false;
 		String serviceInstanceUrl = "";
 		while (!serviceInstanceIsAvailable) {
 
 			// GET Request: check if plan instance was created
-			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON)
-					.get(ClientResponse.class);
 
-			JSONObject jsonObj = new JSONObject(serviceInstancesResponse.getEntity(String.class));
+			JSONObject jsonObj = this.getJSONResource(serviceInstancesResourceUrl);
 			int currentCount = jsonObj.getJSONArray("References").length();
 			if (currentCount > 1) { // Self + service instance
 				JSONArray jsonRefs = jsonObj.getJSONArray("References");
@@ -156,7 +153,6 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 		// /Instances/1/PlanInstances/1486950673724-0/State
 		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
 		System.out.println(planInstanceUrl);
-		WebResource planInstanceResource = this.createWebResource(planInstanceUrl);
 
 		boolean instanceFinished = false;
 		while (!instanceFinished) {
@@ -166,11 +162,8 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			ClientResponse planInstanceResp = planInstanceResource.accept(MediaType.APPLICATION_JSON)
-					.get(ClientResponse.class);
 
-			String responseString = planInstanceResp.getEntity(String.class);
-			JSONObject planInstanceRespJson = new JSONObject(responseString);
+			JSONObject planInstanceRespJson = this.getJSONResource(planInstanceUrl);
 			System.out.println(planInstanceRespJson);
 
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
@@ -182,10 +175,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 		Map<String, String> planOutputs = new HashMap<String, String>();
 		String planInstanceOutputUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
 
-		ClientResponse planInstanceOutput = this.createWebResource(planInstanceOutputUrl)
-				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
-		JSONObject planInstanceOutputJson = new JSONObject(planInstanceOutput.getEntity(String.class));
+		JSONObject planInstanceOutputJson = this.getJSONResource(planInstanceOutputUrl);
 
 		JSONArray planOutputParams = planInstanceOutputJson.getJSONArray("OutputParameters");
 
@@ -199,11 +189,29 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 		}
 
 		ServiceInstance createdInstance = new ServiceInstance(application.getId(), serviceInstanceUrl,
-				this.getServiceInstanceProperties(serviceInstanceUrl));
+				this.getServiceInstanceProperties(serviceInstanceUrl),
+				this.getServiceInstanceState(serviceInstanceUrl));
+
 		// createdInstance.setInputParameters(inputParameters); //FIXME
 		createdInstance.setPlanOutputParameters(planOutputs);
 
 		return createdInstance;
+	}
+
+	private String getServiceInstanceState(String serviceInstanceUrl) {
+		String instanceStateURL = serviceInstanceUrl + "/State";
+
+		JSONObject jsonObj = this.getJSONResource(instanceStateURL);
+
+		return jsonObj.getString("state");
+	}
+
+	private JSONObject getJSONResource(String url) {
+		WebResource instancePropertiesResource = this.createWebResource(url);
+
+		ClientResponse instancePropertiesResponse = instancePropertiesResource.accept(MediaType.APPLICATION_JSON)
+				.get(ClientResponse.class);
+		return new JSONObject(instancePropertiesResponse.getEntity(String.class));
 	}
 
 	private WebResource createWebResource(final String resourceName) {
@@ -311,8 +319,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	private JSONObject getApplicationProperties(final String csarName) {
 		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
 		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
-		ClientResponse resp = this.createWebResource(url).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-		return new JSONObject(resp);
+		return this.getJSONResource(url);
 	}
 
 	/*
@@ -324,10 +331,9 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	@Override
 	public List<Application> getApplications() {
 		List<String> csarNames = new ArrayList<String>();
-		String url = this.getContainerAPIUrl() + "/CSARs";
-		ClientResponse resp = this.createWebResource(url).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		String csarsUrl = this.getContainerAPIUrl() + "/CSARs";
 
-		JSONObject respJsonObj = new JSONObject(resp.getEntity(String.class));
+		JSONObject respJsonObj = this.getJSONResource(csarsUrl);
 
 		JSONArray refArrayJson = respJsonObj.getJSONArray("References");
 
@@ -355,7 +361,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 	private String getAuthor(JSONObject appProps) {
 		if (appProps.has("authors")) {
-			return appProps.getString("authors");
+			return appProps.getJSONArray("authors").toString();			
 		} else {
 			return null;
 		}
@@ -389,12 +395,9 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 		Map<String, String> properties = new HashMap<String, String>();
 
 		String instancePropertiesURL = serviceInstanceId + "/Properties";
-		WebResource instancePropertiesResource = this.createWebResource(instancePropertiesURL);
 
-		ClientResponse instancePropertiesResponse = instancePropertiesResource.accept(MediaType.APPLICATION_JSON)
-				.get(ClientResponse.class);
+		JSONObject jsonObj = this.getJSONResource(instancePropertiesURL);
 
-		JSONObject jsonObj = new JSONObject(instancePropertiesResponse.getEntity(String.class));
 		JSONArray jsonArrayProperties = jsonObj.getJSONArray("payload");
 
 		for (int index = 0; index < jsonArrayProperties.length(); index++) {
@@ -415,13 +418,9 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	private List<ServiceInstance> getInstances(String csarName) {
 		List<ServiceInstance> instances = new ArrayList<ServiceInstance>();
 
-		String serviceTemplateURL = this.getMainServiceTemplateURL(csarName);
-		WebResource serviceTemplateInstancesResource = this.createWebResource(serviceTemplateURL + "/Instances");
+		String serviceTemplateInstancesURL = this.getMainServiceTemplateURL(csarName) + "/Instances";
 
-		ClientResponse serviceTemplateInstancesResponse = serviceTemplateInstancesResource
-				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
-		JSONObject jsonObj = new JSONObject(serviceTemplateInstancesResponse.getEntity(String.class));
+		JSONObject jsonObj = this.getJSONResource(serviceTemplateInstancesURL);
 
 		Iterator iter = jsonObj.getJSONArray("References").iterator();
 
@@ -470,7 +469,6 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	}
 
 	private NodeInstance getNodeInstanceFromNodeInstanceUrl(String serviceInstanceId, String nodeInstanceUrl) {
-
 		try {
 			return new NodeInstance(serviceInstanceId, nodeInstanceUrl, this.getInstanceProperties(nodeInstanceUrl),
 					this.getInstanceState(nodeInstanceUrl));
@@ -491,7 +489,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	private Map<String, String> getInstanceProperties(String nodeInstanceUrl)
 			throws SAXException, IOException, ParserConfigurationException {
 		WebResource nodeInstancePropertiesResource = this.createWebResource(nodeInstanceUrl + "/Properties");
-
+		
 		ClientResponse nodeInstancePropertiesResponse = nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML)
 				.get(ClientResponse.class);
 
@@ -704,9 +702,9 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	}
 
 	private ServiceInstance getServiceInstance(String applicationId, String serviceInstanceUrl) {
-
 		return new ServiceInstance(applicationId, serviceInstanceUrl,
-				this.getServiceInstanceProperties(serviceInstanceUrl));
+				this.getServiceInstanceProperties(serviceInstanceUrl),
+				this.getServiceInstanceState(serviceInstanceUrl));
 	}
 
 	private String getVersion(JSONObject appProps) {
@@ -798,8 +796,11 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 			// GET Request: check if plan instance was created
 			ClientResponse serviceInstancesResponse = referencesResource.accept(MediaType.APPLICATION_JSON)
 					.get(ClientResponse.class);
+			String responseEntityBody = serviceInstancesResponse.getEntity(String.class);
 
-			if (serviceInstancesResponse.getStatus() > 400) {
+			ServiceInstance instanceUpdate = this.updateServiceInstance(instance);
+
+			if (instanceUpdate.getState().equals("DELETED")) {
 				serviceInstanceDeleted = true;
 			} else {
 				try {

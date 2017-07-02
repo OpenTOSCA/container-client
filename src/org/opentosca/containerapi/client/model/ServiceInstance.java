@@ -13,11 +13,13 @@ public class ServiceInstance {
 	private String id; // url
 	private Map<String, String> properties; // 
 	private Map<String, String> planOutputParameters = null; // instantiation output parameters
+	private String state;
 	
-	public ServiceInstance(String applicationId, String id, Map<String, String> properties) {
+	public ServiceInstance(String applicationId, String id, Map<String, String> properties, String state) {
 		this.id = id;
 		this.applicationId = applicationId;
 		this.properties = properties;
+		this.state = state;
 	}
 
 	public String getId() {
@@ -43,4 +45,8 @@ public class ServiceInstance {
 	public String getApplicationId() {
 		return this.applicationId;
 	}
-}
+	
+	public String getState(){
+		return this.state;
+	}
+ }
