@@ -215,7 +215,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	}
 
 	private WebResource createWebResource(final String resourceName) {
-		return createWebResource(resourceName, null);
+		return createWebResource(resourceName, null, false);
 	}
 
 	/*
@@ -225,9 +225,13 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	 * getApplicationProperties(java.lang.String)
 	 */
 
-	private WebResource createWebResource(final String resourceName, final Map<String, String> queryParamsMap) {
+	private WebResource createWebResource(final String resourceName, final Map<String, String> queryParamsMap,
+			boolean logging) {
 		Client client = Client.create();
-		client.addFilter(new LoggingFilter(System.out));
+		
+		if (logging) {
+			client.addFilter(new LoggingFilter(System.out));
+		}
 
 		WebResource webResource = client.resource(resourceName);
 
@@ -242,8 +246,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#deployApplication(
+	 * @see org.opentosca.containerapi.client.IContainerAPIClient#deployApplication(
 	 * java.lang.String)
 	 */
 	@Override
@@ -318,15 +321,14 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 	private JSONObject getApplicationProperties(final String csarName) {
 		// http://localhost:1337/containerapi/CSARs/HomeAssistant_Bare_Docker.csar/MetaData
-		String url = this.getContainerAPIUrl() + "/CSARs/" + csarName + "/MetaData";
+		String url = this.getContainerAPIUrl().replace("/containerapi", "") + "/csars/" + csarName;
 		return this.getJSONResource(url);
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#getApplications()
+	 * @see org.opentosca.containerapi.client.IContainerAPIClient#getApplications()
 	 */
 	@Override
 	public List<Application> getApplications() {
@@ -361,7 +363,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 	private String getAuthor(JSONObject appProps) {
 		if (appProps.has("authors")) {
-			return appProps.getJSONArray("authors").toString();			
+			return appProps.getJSONArray("authors").toString();
 		} else {
 			return null;
 		}
@@ -446,7 +448,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("main", "true");
-		WebResource webResource = createWebResource(url, queryParams);
+		WebResource webResource = createWebResource(url, queryParams, true);
 		ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		String ret = response.getEntity(String.class);
 		response.close();
@@ -489,7 +491,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	private Map<String, String> getInstanceProperties(String nodeInstanceUrl)
 			throws SAXException, IOException, ParserConfigurationException {
 		WebResource nodeInstancePropertiesResource = this.createWebResource(nodeInstanceUrl + "/Properties");
-		
+
 		ClientResponse nodeInstancePropertiesResponse = nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML)
 				.get(ClientResponse.class);
 
@@ -741,8 +743,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.opentosca.containerapi.client.IContainerAPIClient#terminateInstance(
+	 * @see org.opentosca.containerapi.client.IContainerAPIClient#terminateInstance(
 	 * org.opentosca.containerapi.client.Instance)
 	 */
 	@Override
