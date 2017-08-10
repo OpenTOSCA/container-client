@@ -1,14 +1,14 @@
 {
-	"csarPath" : "C:\\Users\\francoaa\\Desktop\\test",
+	"csarPath" : "c:/temp/csars",
 	"containerHost" : "localhost",
 	"csarsTests" : [
 	{
 		"csarName" : "MyTinyToDo_Bare_Docker.csar",
 	 	"inputParams": [
 	 	{
-	 		"DockerEngineURL" : "tcp://localhost:2375",
+	 		"DockerEngineURL" : "tcp://dind:2375",
 	 		"DockerEngineCertificate": "",
-	 		"ApplicationPort": "80"
+	 		"ApplicationPort": "9990"
 	 	}]
 	}
 	]
