@@ -2,11 +2,9 @@ package org.opentosca.containerapi.client.impl;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -121,7 +119,15 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 			// GET Request: check if plan instance was created
 
+			// Wait a little util plan instance and correlation Id are present
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 			JSONObject jsonObj = this.getJSONResource(serviceInstancesResourceUrl);
+			System.out.println(jsonObj.toString());
 			int currentCount = jsonObj.getJSONArray("References").length();
 			if (currentCount > 1) { // Self + service instance
 				JSONArray jsonRefs = jsonObj.getJSONArray("References");
@@ -132,6 +138,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 					if (jsonRef.has("title") && !jsonRef.getString("title").equals("Self")) {
 						serviceInstanceUrl = jsonRef.getString("href");
 						serviceInstanceIsAvailable = true;
+						System.out.println("Instance URL: " + serviceInstanceUrl);
 						break;
 					}
 				}
