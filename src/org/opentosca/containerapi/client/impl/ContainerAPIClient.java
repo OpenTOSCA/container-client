@@ -121,7 +121,7 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 			// Wait a little util plan instance and correlation Id are present
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(10000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -184,13 +184,13 @@ public class ContainerAPIClient extends AbstractContainerAPIClient implements IC
 
 		JSONObject planInstanceOutputJson = this.getJSONResource(planInstanceOutputUrl);
 
-		JSONArray planOutputParams = planInstanceOutputJson.getJSONArray("OutputParameters");
+		JSONArray planOutputParams = planInstanceOutputJson.getJSONArray("outputs");
 
 		for (int index = 0; index < planOutputParams.length(); index++) {
-			JSONObject outputParamJson = planOutputParams.getJSONObject(index).getJSONObject("OutputParameter");
-			if (outputParamJson.has("Name") & outputParamJson.has("Value")) {
-				String name = outputParamJson.getString("Name");
-				String value = outputParamJson.getString("Value");
+			JSONObject outputParamJson = planOutputParams.getJSONObject(index);
+			if (outputParamJson.has("name") & outputParamJson.has("value")) {
+				String name = outputParamJson.getString("name");
+				String value = outputParamJson.getString("value");
 				planOutputs.put(name, value);
 			}
 		}
