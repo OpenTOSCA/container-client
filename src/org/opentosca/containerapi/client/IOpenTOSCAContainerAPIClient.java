@@ -9,11 +9,9 @@ import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 
-public interface IContainerAPIClient {
+public interface IOpenTOSCAContainerAPIClient {
 
 	String getContainerAPIUrl();
-
-	void setContainerAPIUrl(String containerAPIUrl);
 
 	/**
 	 * gets a list of installed applications
@@ -51,6 +49,14 @@ public interface IContainerAPIClient {
 	 */
 	ServiceInstance createServiceInstance(Application application, Map<String, String> params);
 
+	
+	/**
+	 * Returns all {@link ServiceInstance}s of the given {@link Application}
+	 * @param application An {@link Application} deployed on the container
+	 * @return a {@link List} of {@link ServiceInstance}
+	 */
+	List<ServiceInstance> getServiceInstances(Application application);		
+	
 	/**
 	 * terminates the given instance
 	 * 
@@ -60,26 +66,44 @@ public interface IContainerAPIClient {
 	boolean terminateServiceInstance(ServiceInstance instance);
 
 	/**
+	 * Invokes an operation defined in the interfaces of the boundary definition of
+	 * the given application.
+	 * 
+	 * @param application
+	 *            An {@link Application} to call its operation
+	 * @param interfaceName
+	 *            The name of the interface the operation belongs to as
+	 *            {@link String}
+	 * @param operationName
+	 *            The name of the operation to call as {@link String}
+	 * @param params
+	 *            A {@link Map} of {@link String} to {@link String} containing a
+	 *            mapping of input parameters and values for the operation to call
+	 * 
+	 * @return A {@link Map} from {@link String} to {@link String} containing a
+	 *         mapping of output parameters and values of the called operation
+	 */
+	Map<String, String> invokeServiceInstanceOperation(ServiceInstance serviceInstance, String interfaceName, String operationName,
+			Map<String, String> params);
+
+	/**
 	 * Updates the given ServiceInstance object
 	 * 
 	 * @param serviceInstance
-	 *            a ServiceInstance available at the configured OpenTOSCA
-	 *            container
+	 *            a ServiceInstance available at the configured OpenTOSCA container
 	 * @return a ServiceInstance
 	 */
 	ServiceInstance updateServiceInstance(ServiceInstance serviceInstance);
-	
-	
+
 	/**
 	 * Updates the given Node Instance object
 	 * 
 	 * @param nodeInstance
-	 *            a Node Instance available at the configured OpenTOSCA
-	 *            container
+	 *            a Node Instance available at the configured OpenTOSCA container
 	 * @return a Node Instance
 	 */
 	NodeInstance updateNodeInstance(NodeInstance nodeInstance);
-	
+
 	/**
 	 * Updates the given Relation Instance object
 	 * 
@@ -89,7 +113,7 @@ public interface IContainerAPIClient {
 	 * @return a Relation Instance
 	 */
 	RelationInstance updateRelationInstance(RelationInstance relationInstance);
-	
+
 	/**
 	 * Returns a list of all node instances of the given service instance
 	 * 
@@ -98,7 +122,7 @@ public interface IContainerAPIClient {
 	 * @return a list of node instances
 	 */
 	List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance);
-	
+
 	/**
 	 * Returns a list of all relation instances of the given service instance
 	 * 

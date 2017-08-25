@@ -9,16 +9,18 @@ import java.util.List;
  */
 public class Application {
 
-	private String id;
-	private List<String> inputParameters;
-	private List<String> serviceInstancIds;
-	private String displayName;
-	private String version;
-	private String description;
-	private String author;
+	private final String id;
+	private final List<String> inputParameters;
+	private final List<String> serviceInstancIds;
+	private final String displayName;
+	private final String version;
+	private final String description;
+	private final String author;
+	private final List<Interface> interfaces;
+	
 
 	public Application(String id, List<String> inputParameters, List<String> serviceInstanceIds, String displayName,
-			String version, String description, String author) {
+			String version, String description, String author, List<Interface> interfaces) {
 		this.id = id;
 		this.inputParameters = inputParameters;
 		this.serviceInstancIds = serviceInstanceIds;
@@ -26,22 +28,16 @@ public class Application {
 		this.version = version;
 		this.description = description;
 		this.author = author;
+		this.interfaces = interfaces;
 	}
 
 	public String getId() {
 		return id;
 	}
-
-	public void setName(String name) {
-		this.id = name;
-	}
+	
 
 	public List<String> getInputParameters() {
 		return inputParameters;
-	}
-
-	public void setInputParameters(List<String> inputParameters) {
-		this.inputParameters = inputParameters;
 	}
 
 	public List<String> getServiceInstanceIds() {
@@ -62,6 +58,10 @@ public class Application {
 
 	public String getAuthor() {
 		return this.author;
+	}
+	
+	public List<Interface> getInterfaces(){
+		return this.interfaces;
 	}
 
 }
