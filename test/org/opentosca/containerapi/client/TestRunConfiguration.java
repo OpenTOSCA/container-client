@@ -62,7 +62,7 @@ public class TestRunConfiguration {
 				+ ", CSAR: " + this.testCsarName + ", CSAR file path: " + this.directoryPath
 				+ ", Input Parameters: " + this.testInputParams;
 
-		if (!this.instanceRuns.isEmpty()) {
+		if (this.instanceRuns != null && !this.instanceRuns.isEmpty()) {
 			toString += ", Instance Run Configurations:[ ";
 			for (TestInstanceConfiguration instanceRun : this.instanceRuns) {
 				toString += instanceRun;
