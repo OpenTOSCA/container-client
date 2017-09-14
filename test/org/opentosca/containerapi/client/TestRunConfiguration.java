@@ -46,6 +46,8 @@ public class TestRunConfiguration {
 	public TestRunConfiguration(String csarPath, String containerHost, String testCsarName, Map<String, String> testInputParams) {
 		this.testCsarName = testCsarName;
 		this.testInputParams = testInputParams;
+		this.directoryPath = csarPath;
+		this.containerHost = containerHost;
 	}
 
 	public TestRunConfiguration(String csarPath, String containerHost, String testCsarName, Map<String, String> testInputParams,
@@ -59,8 +61,7 @@ public class TestRunConfiguration {
 
 	public String toString() {
 		String toString = "CSAR directory path: " + this.directoryPath + ", Container host: " + this.containerHost
-				+ ", CSAR: " + this.testCsarName + ", CSAR file path: " + this.directoryPath
-				+ ", Input Parameters: " + this.testInputParams;
+				+ ", CSAR: " + this.testCsarName + ", Input Parameters: " + this.testInputParams;
 
 		if (this.instanceRuns != null && !this.instanceRuns.isEmpty()) {
 			toString += ", Instance Run Configurations:[ ";
