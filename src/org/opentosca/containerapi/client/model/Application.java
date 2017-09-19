@@ -17,10 +17,10 @@ public class Application {
 	private final String description;
 	private final String author;
 	private final List<Interface> interfaces;
-	
+	private final String metadata;
 
 	public Application(String id, List<String> inputParameters, List<String> serviceInstanceIds, String displayName,
-			String version, String description, String author, List<Interface> interfaces) {
+			String version, String description, String author, List<Interface> interfaces, String metadata) {
 		this.id = id;
 		this.inputParameters = inputParameters;
 		this.serviceInstancIds = serviceInstanceIds;
@@ -29,6 +29,7 @@ public class Application {
 		this.description = description;
 		this.author = author;
 		this.interfaces = interfaces;
+		this.metadata = metadata;
 	}
 
 	public String getId() {
@@ -64,4 +65,7 @@ public class Application {
 		return this.interfaces;
 	}
 
+	public String getMetadata() { //JSONObject
+		return this.metadata;
+	}
 }

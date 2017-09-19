@@ -1,7 +1,10 @@
 package org.opentosca.containerapi.client.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
-import java.net.URL;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
@@ -31,6 +34,31 @@ public abstract class JSONAPIClient {
 		return new JSONObject(instancePropertiesResponse.getEntity(String.class));
 	}
 
+	protected OutputStream getFileResource(URI url) {
+		WebResource instancePropertiesResource = this.createWebResource(url.toString());
+	
+		ClientResponse instancePropertiesResponse = instancePropertiesResource.accept(MediaType.APPLICATION_OCTET_STREAM)
+				.get(ClientResponse.class);
+		DataInputStream input = new DataInputStream (instancePropertiesResponse.getEntityInputStream());
+		OutputStream output = null;
+		if (instancePropertiesResponse.getStatus() == 200) {
+			byte[] data = new byte[4096];
+			int i;
+			try {
+			    output = new ByteArrayOutputStream();
+				while ((i = input.read(data)) != -1) {
+	                output.write(data, 0, i);
+	            }
+	
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
+		}
+		return output;
+	}
+	
 	protected WebResource createWebResource(final String resourceName) {
 		return createWebResource(resourceName, null, false);
 	}

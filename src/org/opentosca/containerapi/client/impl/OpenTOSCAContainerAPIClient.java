@@ -1,6 +1,8 @@
 package org.opentosca.containerapi.client.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -222,13 +224,26 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			String csarName = csarPath.substring(csarPath.lastIndexOf("/") + 1);
 			List<String> inputParams = this.getCreateInstanceInputParameters(csarName);
 
+			//get Application properties: display name, author, ...
+			JSONObject appProps = this.getApplicationProperties(csarName);
+			String metadataStr = "";
+			OutputStream byteOutputStream = this.getApplicationContent(csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+			
+			if (byteOutputStream != null) {
+				metadataStr = byteOutputStream.toString();
+				try {
+					byteOutputStream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			// String name, List<String> inputParameters, List<ServiceInstance>
 			// instances, String displayName,
-			// String version, String description, String author
-			JSONObject appProps = this.getApplicationProperties(csarName);
+			// String version, String description, String author, List<Interface> interfaces, String metadata
 			Application deployedAplication = new Application(csarName, inputParams, new ArrayList<String>(),
 					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
-					this.getAuthor(appProps), this.getInterfaces(csarName));
+					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr);
 
 			while (!arePlansDeployed(deployedAplication)) {
 				try {
@@ -274,14 +289,56 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			// instances, String displayName,
 			// String version, String description, String author
 			JSONObject appProps = this.getApplicationProperties(csarName);
-
+			
+			String metadataStr = "";
+			OutputStream byteOutputStream = this.getApplicationContent(csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+			
+			if (byteOutputStream != null) {
+				metadataStr = byteOutputStream.toString();
+				try {
+					byteOutputStream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+						
 			apps.add(new Application(csarName, inputParams, new ArrayList<String>(), this.getDisplayName(appProps),
 					this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
-					this.getInterfaces(csarName)));
+					this.getInterfaces(csarName), metadataStr));
 		}
 		return apps;
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#getApplication(java.lang.String)
+	 */
+	@Override
+	public Application getApplication(final String csarName) {
+		List<String> inputParams = getCreateInstanceInputParameters(csarName);
+		// String name, List<String> inputParameters, List<ServiceInstance>
+		// instances, String displayName,
+		// String version, String description, String author
+		JSONObject appProps = this.getApplicationProperties(csarName);
+		
+		String metadataStr = "";
+		OutputStream byteOutputStream = this.getApplicationContent(csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+		
+		if (byteOutputStream != null) {
+			metadataStr = byteOutputStream.toString();
+			try {
+				byteOutputStream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+					
+		return new Application(csarName, inputParams, new ArrayList<String>(), this.getDisplayName(appProps),
+				this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
+				this.getInterfaces(csarName), metadataStr);
+	}
+	
 	@Override
 	public List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance) {
 		List<NodeInstance> nodeInstances = new ArrayList<NodeInstance>();

@@ -203,6 +203,7 @@ public class ContainerAPIClientTestJUnit {
 		for (Application app : applications) {
 			System.out.println("Application name: " + app.getId() + " Application instantiation input: "
 					+ app.getInputParameters());
+			System.out.println("Metadata: \n" + app.getMetadata());
 		}
 		assertEquals(1, applications.size());
 	}
@@ -244,9 +245,18 @@ public class ContainerAPIClientTestJUnit {
 		boolean result = client.terminateServiceInstance(instance);
 		assertTrue(result);
 	}
+	
+	@Test
+	public void test8GetApplication() {
+		Application app = client.getApplication(runConfiguration.testCsarName);
+		assertNotNull(app);
+		System.out.println("Application name: " + app.getId() + " Application instantiation input: "
+				+ app.getInputParameters());
+		System.out.println("Metadata: \n" + app.getMetadata());
+	}
 
 	@Test
-	public void test8DeleteApplication() {
+	public void test9DeleteApplication() {
 		// Delete application
 		Application app = application;
 

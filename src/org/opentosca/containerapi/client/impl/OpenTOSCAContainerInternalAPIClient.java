@@ -1,8 +1,8 @@
 package org.opentosca.containerapi.client.impl;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
-import java.lang.reflect.Array;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -611,4 +611,9 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		this.legacyContainerAPIUrl = containerAPIUrl;
 	}
 
+	 OutputStream getApplicationContent(final String path) {
+		String url = this.getLegacyContainerAPIUrl().replace(Constants.OPENTOSCACONTAINERAPI_PATH_LEGACYAPIROOT, "")
+				+ Constants.OPENTOSCACONTAINERAPI_PATH_APIROOT + "/" + path;
+		return this.getFileResource(URI.create(url));
+	}
 }

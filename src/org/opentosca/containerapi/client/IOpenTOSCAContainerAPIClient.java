@@ -20,6 +20,14 @@ public interface IOpenTOSCAContainerAPIClient {
 	 */
 	List<Application> getApplications();
 
+	
+	/**
+	 * retrieves an Application by its CSAR name
+	 * @param csarName
+	 * @return
+	 */
+	Application getApplication(String csarName);
+	
 	/**
 	 * 
 	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
