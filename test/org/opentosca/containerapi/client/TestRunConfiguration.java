@@ -20,6 +20,8 @@ public class TestRunConfiguration {
 
 	String directoryPath;
 	String containerHost;
+	// @hahnml: In Docker-based setups, we also need to know the host (container) name of the OpenTOSCA container within a Docker network
+	String containerHostInternal;
 	String testCsarName;
 	Map<String, String> testInputParams;
 
@@ -49,6 +51,14 @@ public class TestRunConfiguration {
 		this.directoryPath = csarPath;
 		this.containerHost = containerHost;
 	}
+	
+	public TestRunConfiguration(String csarPath, String containerHost, String containerHostInternal, String testCsarName, Map<String, String> testInputParams) {
+		this.testCsarName = testCsarName;
+		this.testInputParams = testInputParams;
+		this.directoryPath = csarPath;
+		this.containerHost = containerHost;
+		this.containerHostInternal = containerHostInternal;
+	}
 
 	public TestRunConfiguration(String csarPath, String containerHost, String testCsarName, Map<String, String> testInputParams,
 			List<TestInstanceConfiguration> instanceRuns) {
@@ -58,9 +68,18 @@ public class TestRunConfiguration {
 		this.containerHost = containerHost;
 		this.instanceRuns = instanceRuns;
 	}
+	
+	public TestRunConfiguration(String csarPath, String containerHost, String containerHostInternal, String testCsarName, Map<String, String> testInputParams, List<TestInstanceConfiguration> instanceRuns) {
+		this.testCsarName = testCsarName;
+		this.testInputParams = testInputParams;
+		this.directoryPath = csarPath;
+		this.containerHost = containerHost;
+		this.containerHostInternal = containerHostInternal;
+		this.instanceRuns = instanceRuns;
+	}
 
 	public String toString() {
-		String toString = "CSAR directory path: " + this.directoryPath + ", Container host: " + this.containerHost
+		String toString = "CSAR directory path: " + this.directoryPath + ", Container host: " + this.containerHost + ", Internal container host: " + this.containerHostInternal
 				+ ", CSAR: " + this.testCsarName + ", Input Parameters: " + this.testInputParams;
 
 		if (this.instanceRuns != null && !this.instanceRuns.isEmpty()) {

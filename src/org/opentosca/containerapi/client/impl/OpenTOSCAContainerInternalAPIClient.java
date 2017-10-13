@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,12 +43,18 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	URI containerUrl;
 
+	// @hahnml: Remember the external and internal container host to resolve correct
+	// URLs in Docker-based
+	// environments
+	String containerHost = "localhost";
+	String containerHostInternal = "localhost";
+
 	@Deprecated
 	String legacyContainerAPIUrl = "";
 
 	boolean arePlansDeployed(Application application) {
-		WebResource csarControlResource = this.createWebResource(
-				this.getLegacyContainerAPIUrl() + Constants.OPENTOSCACONTAINERAPI_PATH_CSARCONTROL + application.getId());
+		WebResource csarControlResource = this.createWebResource(this.getLegacyContainerAPIUrl()
+				+ Constants.OPENTOSCACONTAINERAPI_PATH_CSARCONTROL + application.getId());
 
 		Builder builder = csarControlResource.accept(MediaType.TEXT_PLAIN);
 
@@ -131,8 +139,6 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
 		fac.setNamespaceAware(true);
 		fac.setIgnoringComments(true);
-		
-		
 
 		InputSource sorce = new InputSource(new StringReader(responseBody));
 
@@ -153,14 +159,18 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		JSONObject jsonObj = this.getJSONResource(serviceTemplateInstancesURL);
 
-		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES).iterator();
+		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES)
+				.iterator();
 
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
 			if (!obj.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_TITLE)
 					.equals(Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)) {
+
+				// @hahnml: Resolve the internal host in the URL to the external one
 				instances.add(this.getServiceInstance(csarName,
-						obj.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF)));
+						resolveUrl(obj.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF),
+								this.containerHost)));
 			}
 		}
 
@@ -182,7 +192,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		List<String> paramNames = new ArrayList<String>();
 		JSONObject obj = this.getPlanAsJson(csarName, planPath);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
-		JSONArray jsonArrayParams = planObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAMS);
+		JSONArray jsonArrayParams = planObj
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAMS);
 
 		for (int index = 0; index < jsonArrayParams.length(); index++) {
 			JSONObject inputParam = jsonArrayParams.getJSONObject(index);
@@ -197,7 +208,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		List<String> paramNames = new ArrayList<String>();
 		JSONObject obj = this.getJSONResource(uri);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
-		JSONArray jsonArrayParams = planObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAMS);
+		JSONArray jsonArrayParams = planObj
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAMS);
 
 		for (int index = 0; index < jsonArrayParams.length(); index++) {
 			JSONObject inputParam = jsonArrayParams.getJSONObject(index);
@@ -212,7 +224,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		String serviceTemplateInterfacesResourceUrl = this.getInterfacesUrl(csarName);
 		List<String> names = new ArrayList<String>();
 		JSONObject respJson = this.getJSONResource(serviceTemplateInterfacesResourceUrl);
-		this.getReferencesFromLegacyApiResource(respJson, Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)
+		this.getReferencesFromLegacyApiResource(respJson,
+				Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)
 				.forEach(x -> names.add(this.getLastPathSegment(URI.create(x))));
 		return names;
 	}
@@ -221,7 +234,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		List<String> paramNames = new ArrayList<String>();
 		JSONObject obj = this.getJSONResource(uri);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
-		JSONArray jsonArrayParams = planObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_OUTPUTPARAMS);
+		JSONArray jsonArrayParams = planObj
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_OUTPUTPARAMS);
 
 		for (int index = 0; index < jsonArrayParams.length(); index++) {
 			JSONObject inputParam = jsonArrayParams.getJSONObject(index);
@@ -259,7 +273,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private String getInterfacesUrl(final String csarName) {
-		return this.getLegacyMainServiceTemplateURL(csarName) + Constants.OPENTOSCACONTAINERAPI_PATHS_BOUNDARYINTERFACES;
+		return this.getLegacyMainServiceTemplateURL(csarName)
+				+ Constants.OPENTOSCACONTAINERAPI_PATHS_BOUNDARYINTERFACES;
 	}
 
 	protected String getInterfaceUrl(final String csarName, final String interfaceName) {
@@ -290,13 +305,15 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		response.close();
 
 		JSONObject obj = new JSONObject(ret);
-		JSONArray referencesArray = obj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES);
+		JSONArray referencesArray = obj
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES);
 		String href = null;
 		for (int i = 0; i < referencesArray.length(); i++) {
 			String title = referencesArray.getJSONObject(i)
 					.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_TITLE);
 			if (!title.equalsIgnoreCase(Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)) {
-				href = referencesArray.getJSONObject(i).getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
+				href = referencesArray.getJSONObject(i)
+						.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
 				System.out.println(href);
 				break;
 			}
@@ -308,11 +325,12 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getMainServiceTemplateURL(final String csarName) {
-		String serviceTemplatesResourceUrl = this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS
-				+ csarName + Constants.OPENTOSCACONTAINERAPI_PATH_SERVICETEMPLATES;
+		String serviceTemplatesResourceUrl = this.getContainerUrl().toString()
+				+ Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + csarName
+				+ Constants.OPENTOSCACONTAINERAPI_PATH_SERVICETEMPLATES;
 		return this.getJSONResource(serviceTemplatesResourceUrl)
-				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES).getJSONObject(0)
-				.getJSONObject(Constants.OPENTOSCACONTAINERAPI_SERVICETEMAPLTESRESOURCE_JSON_LINKS)
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES)
+				.getJSONObject(0).getJSONObject(Constants.OPENTOSCACONTAINERAPI_SERVICETEMAPLTESRESOURCE_JSON_LINKS)
 				.getJSONObject(Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF_LOWER)
 				.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
 	}
@@ -341,7 +359,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.get(ClientResponse.class);
 		JSONObject jsonObj = new JSONObject(nodeTemplateInstancesResponse.getEntity(String.class));
 
-		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES).iterator();
+		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES)
+				.iterator();
 
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
@@ -366,7 +385,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		JSONObject jsonObj = new JSONObject(serviceInstanceNodeTemplatesResponse.getEntity(String.class));
 
-		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES).iterator();
+		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES)
+				.iterator();
 
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
@@ -389,19 +409,21 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		case "csarEntrypoint":
 			return this.legacyContainerAPIUrl + Constants.OPENTOSCACONTAINERAPI_PATHS_LEGACYCSARS + csarName;
 		case "instanceDataAPIUrl":
-			return this.getLegacyMainServiceTemplateURL(csarName) + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES + "/";
+			return this.getLegacyMainServiceTemplateURL(csarName) + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES
+					+ "/";
 		default:
 			return null;
 		}
 	}
 
 	protected URI getOperationsUri(final String csarName, final String interfaceName) {
-		return URI.create(this.getInterfaceUrl(csarName, interfaceName) + Constants.OPENTOSCACONTAINERAPI_PATHS_OPERATIONS);
+		return URI.create(
+				this.getInterfaceUrl(csarName, interfaceName) + Constants.OPENTOSCACONTAINERAPI_PATHS_OPERATIONS);
 	}
-	
+
 	protected URI getOperationUrl(final String csarName, final String interfaceName, final String operationName) {
-		for(URI opUri : this.getOperationsUrls(csarName, interfaceName)) {
-			if(this.getLastPathSegment(opUri).equals(operationName)) {
+		for (URI opUri : this.getOperationsUrls(csarName, interfaceName)) {
+			if (this.getLastPathSegment(opUri).equals(operationName)) {
 				return opUri;
 			}
 		}
@@ -412,7 +434,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		URI interfaceOperationsResourceUrl = this.getOperationsUri(csarName, interfaceName);
 		JSONObject jsonResp = this.getJSONResource(interfaceOperationsResourceUrl);
 		List<URI> result = new ArrayList<>();
-		this.getReferencesFromLegacyApiResource(jsonResp, Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)
+		this.getReferencesFromLegacyApiResource(jsonResp,
+				Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)
 				.forEach(x -> result.add((URI.create(x))));
 		return result;
 	}
@@ -429,7 +452,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		return jsonObj;
 	}
-	
+
 	JSONObject getPlanAsJson(final String planUrl) {
 		WebResource planParameterResource = this.createWebResource(planUrl);
 		String jsonResponse = planParameterResource.accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -447,7 +470,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	@Deprecated
 	private List<String> getReferencesFromLegacyApiResource(final JSONObject jsonObject, final String... titleExcept) {
 		List<String> references = new ArrayList<>();
-		JSONArray jsonArray = jsonObject.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES);
+		JSONArray jsonArray = jsonObject
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES);
 
 		if (titleExcept == null || titleExcept.length == 0) {
 			// return all
@@ -460,8 +484,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			String title = jsonArray.getJSONObject(index)
 					.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_TITLE);
 			if (!Arrays.asList(titleExcept).contains(title)) {
-				references.add(
-						jsonArray.getJSONObject(index).getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF));
+				references.add(jsonArray.getJSONObject(index)
+						.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF));
 			}
 		}
 		return references;
@@ -496,7 +520,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.get(ClientResponse.class);
 		JSONObject jsonObj = new JSONObject(nodeTemplateInstancesResponse.getEntity(String.class));
 
-		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES).iterator();
+		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES)
+				.iterator();
 
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
@@ -514,15 +539,16 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		List<String> urls = new ArrayList<String>();
 
-		WebResource serviceInstanceNodeTemplatesResource = this
-				.createWebResource(serviceInstance.getURL() + Constants.OPENTOSCACONTAINERAPI_PATHS_RELATIONSHIPTEMPLATES);
+		WebResource serviceInstanceNodeTemplatesResource = this.createWebResource(
+				serviceInstance.getURL() + Constants.OPENTOSCACONTAINERAPI_PATHS_RELATIONSHIPTEMPLATES);
 
 		ClientResponse serviceInstanceNodeTemplatesResponse = serviceInstanceNodeTemplatesResource
 				.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
 		JSONObject jsonObj = new JSONObject(serviceInstanceNodeTemplatesResponse.getEntity(String.class));
 
-		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES).iterator();
+		Iterator iter = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_REFERENCES)
+				.iterator();
 
 		while (iter.hasNext()) {
 			JSONObject obj = (JSONObject) iter.next();
@@ -549,7 +575,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		JSONObject jsonObj = this.getJSONResource(instancePropertiesURL);
 
-		JSONArray jsonArrayProperties = jsonObj.getJSONArray(Constants.OPENTOSCACONTAINERAPI_PROPERTIESRESOURCE_PAYLOAD);
+		JSONArray jsonArrayProperties = jsonObj
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_PROPERTIESRESOURCE_PAYLOAD);
 
 		for (int index = 0; index < jsonArrayProperties.length(); index++) {
 
@@ -605,13 +632,33 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		return propMap;
 	}
+	
+	// @hahnml: Replace the container host in an URL with the actual host name. In
+	// Docker-based environments it depends from where the URL is resolved, inside a
+	// network of docker containers (use "containerHostInternal" as hostName) or
+	// from the outside ((use "containerHost" as hostName)), e.g., by this client.
+	String resolveUrl(String url, String hostName) {
+		String result = url;
+
+		// Support resolution of both DNS and IP-based host names, e.g.,
+		// "http://container:1337/containerapi/..." or
+		// "http://192.168.132.104:1337/containerapi/..."
+		Pattern pattern = Pattern.compile("http://(\\w+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):1337.*");
+		Matcher matcher = pattern.matcher(url);
+
+		if (matcher.find()) {
+			result = result.replaceFirst(matcher.group(1), hostName);
+		}
+
+		return result;
+	}
 
 	@Deprecated
 	protected void setLegacyContainerAPIUrl(final String containerAPIUrl) {
 		this.legacyContainerAPIUrl = containerAPIUrl;
 	}
 
-	 OutputStream getApplicationContent(final String path) {
+	OutputStream getApplicationContent(final String path) {
 		String url = this.getLegacyContainerAPIUrl().replace(Constants.OPENTOSCACONTAINERAPI_PATH_LEGACYAPIROOT, "")
 				+ Constants.OPENTOSCACONTAINERAPI_PATH_APIROOT + "/" + path;
 		return this.getFileResource(URI.create(url));

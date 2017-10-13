@@ -1,14 +1,15 @@
 {
-	"csarPath": "/Users/kalmankepes/Documents/temp/scalingplans",
+	"csarPath": "../testCSARs/scalingplans",
 	"containerHost": "localhost",
+	"containerHostInternal": "container",
 	"csarsTests": [
 		{
 			"csarName": "MyTinyToDo_Bare_Docker.csar",
 			"inputParams": [
 				{
-					"DockerEngineURL": "tcp://localhost:2375",
+					"DockerEngineURL": "tcp://dind:2375",
 					"DockerEngineCertificate": "",
-					"ApplicationPort": "80"
+					"ApplicationPort": "9991"
 				}
 			],
 			"instanceRun": [
@@ -17,9 +18,9 @@
 					"operationName": "scale-out",
 					"inputParams": [
 						{
-							"DockerEngineURL": "tcp://localhost:2375",
+							"DockerEngineURL": "tcp://dind:2375",
 							"DockerEngineCertificate": "",
-							"ApplicationPort": "81"
+							"ApplicationPort": "9992"
 						}
 					]
 				}

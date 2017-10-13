@@ -51,9 +51,11 @@ public class ContainerAPIClientTestJUnit {
 			testParams = FileUtils.readFileToString(new File("resources/testParams.json"), "UTF-8");
 
 			if (testParams != null) {
-				String testCsarPath = new JSONObject(testParams).getString("csarPath");
-				String containerHost = new JSONObject(testParams).getString("containerHost");
-				JSONArray csarsTests = new JSONObject(testParams).getJSONArray("csarsTests");
+				JSONObject jTestParams = new JSONObject(testParams);
+				String testCsarPath = jTestParams.getString("csarPath");
+				String containerHost = jTestParams.getString("containerHost");
+				String containerHostInternal = jTestParams.optString("containerHostInternal", containerHost);
+				JSONArray csarsTests = jTestParams.getJSONArray("csarsTests");
 
 				for (int i = 0, size = csarsTests.length(); i < size; i++) {
 
@@ -96,11 +98,11 @@ public class ContainerAPIClientTestJUnit {
 
 						}
 
-						params.add(new TestRunConfiguration(testCsarPath, containerHost, testCsarName, testInputParams,
+						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal, testCsarName, testInputParams,
 								run));
 					} else {
 						params.add(
-								new TestRunConfiguration(testCsarPath, containerHost, testCsarName, testInputParams));
+								new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal, testCsarName, testInputParams));
 					}
 				}
 
@@ -118,7 +120,7 @@ public class ContainerAPIClientTestJUnit {
 
 	public ContainerAPIClientTestJUnit(TestRunConfiguration params) {
 		runConfiguration = params;
-		client = new OpenTOSCAContainerAPIClient(runConfiguration.containerHost);
+		client = new OpenTOSCAContainerAPIClient(runConfiguration.containerHost, runConfiguration.containerHostInternal);
 	}
 
 	@Rule
