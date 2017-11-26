@@ -255,7 +255,7 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			// instances, String displayName,
 			// String version, String description, String author, List<Interface>
 			// interfaces, String metadata
-			Application deployedAplication = new Application(csarName, inputParams, new ArrayList<String>(),
+			Application deployedAplication = new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
 					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
 					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr);
 
@@ -318,7 +318,7 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 				}
 			}
 
-			apps.add(new Application(csarName, inputParams, new ArrayList<String>(), this.getDisplayName(appProps),
+			apps.add(new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(), this.getDisplayName(appProps),
 					this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
 					this.getInterfaces(csarName), metadataStr));
 		}
@@ -353,8 +353,10 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 				e.printStackTrace();
 			}
 		}
+		
+		
 
-		return new Application(csarName, inputParams, new ArrayList<String>(), this.getDisplayName(appProps),
+		return new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(), this.getDisplayName(appProps),
 				this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
 				this.getInterfaces(csarName), metadataStr);
 	}

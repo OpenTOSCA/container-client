@@ -61,6 +61,18 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	@Deprecated
 	String legacyContainerAPIUrl = "";
+	
+	List<String> filterManagementParameters(List<String> inputParams) {
+		List<String> filteredParams = new ArrayList<String>();
+		
+		for(String inputParam : inputParams) {
+			if(!Arrays.asList(Constants.OPENTOSCACONTAINERAPI_MANAGEMENT_PARAMETERS).contains(inputParam)) {
+				filteredParams.add(inputParam);
+			}
+		}
+		
+		return filteredParams;
+	}
 
 	boolean arePlansDeployed(Application application) {
 		WebResource csarControlResource = this.createWebResource(this.getLegacyContainerAPIUrl()

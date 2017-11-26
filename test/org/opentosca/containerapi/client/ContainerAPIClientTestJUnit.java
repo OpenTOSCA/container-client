@@ -133,14 +133,14 @@ public class ContainerAPIClientTestJUnit {
 
 		// should always be one application and service instance for this test class
 		switch (testName.getMethodName()) {
-		case "test3GetInputParameters[0]":
-		case "test4CreateInstance[0]":
-		case "test8DeleteApplication[0]":
+		case "test5GetInputParameters[0]":
+		case "test6CreateInstance[0]":
+		case "test9DeleteApplication[0]":
 			this.application = client.getApplications().get(0);
 			break;
-		case "test5GetInstanceProperties[0]":
-		case "test6TestInstanceRuns[0]":
-		case "test7DeleteInstance[0]":
+		case "test7GetInstanceProperties[0]":
+		case "test8TestInstanceRuns[0]":
+		case "test999DeleteInstance[0]":
 			this.application = client.getApplications().get(0);
 			// just makes the the testing more robust
 			this.instance = this.getInstanceBasedOnHighestId(client.getServiceInstances(application));
@@ -262,13 +262,13 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test9DeleteInstance() {
+	public void test999DeleteInstance() {
 		boolean result = client.terminateServiceInstance(instance);
 		assertTrue(result);
 	}
 	
 	@Test
-	public void test10GetApplication() {
+	public void test99GetApplication() {
 		Application app = client.getApplication(runConfiguration.testCsarName);
 		assertNotNull(app);
 		System.out.println("Application name: " + app.getId() + " Application instantiation input: "
@@ -277,7 +277,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test11DeleteApplication() {
+	public void test9DeleteApplication() {
 		// Delete application
 		Application app = application;
 
