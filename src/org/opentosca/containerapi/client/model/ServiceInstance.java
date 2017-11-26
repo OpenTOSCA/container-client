@@ -16,11 +16,12 @@ public class ServiceInstance {
 	private Map<String, String> planOutputParameters = null; // instantiation output parameters
 	private String state;
 	
-	public ServiceInstance(String applicationId, String uri, Map<String, String> properties, String state) {
+	public ServiceInstance(String applicationId, String uri, Map<String, String> properties, String state, Map<String,String> planOutputParameters) {
 		this.uri = URI.create(uri);
 		this.applicationId = applicationId;
 		this.properties = properties;
 		this.state = state;
+		this.planOutputParameters = planOutputParameters;
 	}
 
 	public URI getURL() {
@@ -31,16 +32,8 @@ public class ServiceInstance {
 		return Integer.valueOf(this.uri.getPath().substring(this.uri.getPath().lastIndexOf("/") + 1 ));
 	}
 	
-	public void setId(String id) {
-		this.uri = URI.create(id);
-	}
-	
 	public Map<String,String> getPlanOutputParameters() {
 		return this.planOutputParameters;
-	}
-	
-	public void setPlanOutputParameters(Map<String, String> planOutputParameters) {
-		this.planOutputParameters = planOutputParameters;
 	}
 	
 	public Map<String, String> getProperties() {

@@ -31,6 +31,7 @@ import org.opentosca.containerapi.client.impl.OpenTOSCAContainerAPIClient;
 import org.opentosca.containerapi.client.impl.OpenTOSCAContainerInternalAPIClient;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.opentosca.containerapi.client.model.ServiceTemplate;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -209,9 +210,27 @@ public class ContainerAPIClientTestJUnit {
 		}
 		assertEquals(1, applications.size());
 	}
+	
+	@Test
+	public void test4GetServiceTemplates() {
+		System.out.println(runConfiguration.testCsarName);
+		List<Application> applications = client.getApplications();
+		System.out.println("Installed Applications: " + applications.size());
+		
+
+		for (Application app : applications) {
+			
+			ServiceTemplate servTemplate = client.getServiceTemplate(app);
+			assertNotNull(servTemplate);
+			
+			assertNotEquals(0, servTemplate.getNodeTemplates().size());
+			assertNotEquals(0, servTemplate.getRelationshipTemplates().size());
+		}
+		
+	}
 
 	@Test
-	public void test3GetInputParameters() {
+	public void test5GetInputParameters() {
 
 		List<String> inputParams = application.getInputParameters();
 		System.out.println("input parameters: " + inputParams);
@@ -219,20 +238,20 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test4CreateInstance() {
+	public void test6CreateInstance() {
 		instance = client.createServiceInstance(application, runConfiguration.testInputParams);
 		assertNotNull(instance);
 		System.out.println("output parameters: " + instance.getPlanOutputParameters());
 	}
 
 	@Test
-	public void test5GetInstanceProperties() {
+	public void test7GetInstanceProperties() {
 		Map<String, String> instanceProperties = instance.getProperties();
 		System.out.println(instanceProperties);
 	}
 
 	@Test
-	public void test6TestInstanceRuns() {
+	public void test8TestInstanceRuns() {
 		for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
 
 			Map<String, String> output = this.client.invokeServiceInstanceOperation(instance, instanceRun.interfaceName,
@@ -243,13 +262,13 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test7DeleteInstance() {
+	public void test9DeleteInstance() {
 		boolean result = client.terminateServiceInstance(instance);
 		assertTrue(result);
 	}
 	
 	@Test
-	public void test8GetApplication() {
+	public void test10GetApplication() {
 		Application app = client.getApplication(runConfiguration.testCsarName);
 		assertNotNull(app);
 		System.out.println("Application name: " + app.getId() + " Application instantiation input: "
@@ -258,7 +277,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test9DeleteApplication() {
+	public void test11DeleteApplication() {
 		// Delete application
 		Application app = application;
 

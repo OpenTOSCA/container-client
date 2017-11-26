@@ -8,6 +8,7 @@ import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.opentosca.containerapi.client.model.ServiceTemplate;
 
 public interface IOpenTOSCAContainerAPIClient {
 
@@ -20,14 +21,14 @@ public interface IOpenTOSCAContainerAPIClient {
 	 */
 	List<Application> getApplications();
 
-	
 	/**
 	 * retrieves an Application by its CSAR name
+	 * 
 	 * @param csarName
 	 * @return
 	 */
 	Application getApplication(String csarName);
-	
+
 	/**
 	 * 
 	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
@@ -48,6 +49,24 @@ public interface IOpenTOSCAContainerAPIClient {
 	String undeployApplication(Application application);
 
 	/**
+	 * Returns the main service template of the given application
+	 * 
+	 * @param application
+	 *            an object of class Application
+	 * @return an Object of the class ServiceTemplate
+	 */
+	ServiceTemplate getServiceTemplate(Application application);
+
+	/**
+	 * Returns the service template the given service instance belongs to
+	 * 
+	 * @param serviceInstance
+	 *            an object of the class ServiceInstance
+	 * @return an Object of the class ServiceTemplate
+	 */
+	ServiceTemplate getServiceTemplate(ServiceInstance serviceInstance);
+
+	/**
 	 * creates an instance of the application
 	 * 
 	 * @param application
@@ -57,14 +76,15 @@ public interface IOpenTOSCAContainerAPIClient {
 	 */
 	ServiceInstance createServiceInstance(Application application, Map<String, String> params);
 
-	
 	/**
 	 * Returns all {@link ServiceInstance}s of the given {@link Application}
-	 * @param application An {@link Application} deployed on the container
+	 * 
+	 * @param application
+	 *            An {@link Application} deployed on the container
 	 * @return a {@link List} of {@link ServiceInstance}
 	 */
-	List<ServiceInstance> getServiceInstances(Application application);		
-	
+	List<ServiceInstance> getServiceInstances(Application application);
+
 	/**
 	 * terminates the given instance
 	 * 
@@ -91,8 +111,8 @@ public interface IOpenTOSCAContainerAPIClient {
 	 * @return A {@link Map} from {@link String} to {@link String} containing a
 	 *         mapping of output parameters and values of the called operation
 	 */
-	Map<String, String> invokeServiceInstanceOperation(ServiceInstance serviceInstance, String interfaceName, String operationName,
-			Map<String, String> params);
+	Map<String, String> invokeServiceInstanceOperation(ServiceInstance serviceInstance, String interfaceName,
+			String operationName, Map<String, String> params);
 
 	/**
 	 * Updates the given ServiceInstance object

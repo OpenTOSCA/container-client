@@ -18,6 +18,8 @@ import com.sun.jersey.api.client.filter.LoggingFilter;
 
 public abstract class JSONAPIClient {
 
+	
+	
 	protected JSONObject getJSONResource(String url) {
 		WebResource instancePropertiesResource = this.createWebResource(url);
 	

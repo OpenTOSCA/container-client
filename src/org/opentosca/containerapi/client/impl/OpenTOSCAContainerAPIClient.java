@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.namespace.QName;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,6 +21,7 @@ import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.opentosca.containerapi.client.model.ServiceTemplate;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -184,11 +186,8 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 		}
 
 		ServiceInstance createdInstance = new ServiceInstance(application.getId(), serviceInstanceUrl,
-				this.getServiceInstanceProperties(serviceInstanceUrl),
-				this.getServiceInstanceState(serviceInstanceUrl));
-
-		// createdInstance.setInputParameters(inputParameters); //FIXME
-		createdInstance.setPlanOutputParameters(planOutputs);
+				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
+				planOutputs);
 
 		return createdInstance;
 	}
@@ -603,6 +602,22 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 	@Override
 	public List<ServiceInstance> getServiceInstances(Application application) {
 		return this.getInstances(application.getId());
+	}
+
+	@Override
+	public ServiceTemplate getServiceTemplate(Application application) {
+
+		// we assume there is only one service template in an application
+		QName serviceTemplateId = this.getServiceTemplateId(application);
+
+		return new ServiceTemplate(serviceTemplateId, application.getId(),
+				this.getServiceTemplateProperties(application), this.getNodeTemplates(application),
+				this.getRelationshipTemplates(application));
+	}
+
+	@Override
+	public ServiceTemplate getServiceTemplate(ServiceInstance serviceInstance) {
+		return this.getServiceTemplate(this.getApplication(serviceInstance.getApplicationId()));
 	}
 
 }

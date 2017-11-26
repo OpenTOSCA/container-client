@@ -3,7 +3,9 @@ package org.opentosca.containerapi.client.impl;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,16 +16,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.Node;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.Interface;
 import org.opentosca.containerapi.client.model.NodeInstance;
+import org.opentosca.containerapi.client.model.NodeTemplate;
 import org.opentosca.containerapi.client.model.RelationInstance;
+import org.opentosca.containerapi.client.model.RelationshipTemplate;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -324,10 +334,13 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		return href;
 	}
 
-	String getMainServiceTemplateURL(final String csarName) {
-		String serviceTemplatesResourceUrl = this.getContainerUrl().toString()
-				+ Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + csarName
+	String createServiceTemplatesUrl(final String csarName) {
+		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + csarName
 				+ Constants.OPENTOSCACONTAINERAPI_PATH_SERVICETEMPLATES;
+	}
+
+	String getMainServiceTemplateURL(final String csarName) {
+		String serviceTemplatesResourceUrl = this.createServiceTemplatesUrl(csarName);
 		return this.getJSONResource(serviceTemplatesResourceUrl)
 				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES)
 				.getJSONObject(0).getJSONObject(Constants.OPENTOSCACONTAINERAPI_SERVICETEMAPLTESRESOURCE_JSON_LINKS)
@@ -564,8 +577,66 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	ServiceInstance getServiceInstance(String applicationId, String serviceInstanceUrl) {
 		return new ServiceInstance(applicationId, serviceInstanceUrl,
-				this.getServiceInstanceProperties(serviceInstanceUrl),
-				this.getServiceInstanceState(serviceInstanceUrl));
+				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
+				new HashMap<String, String>());
+	}
+
+	Map<String, String> getServiceTemplateProperties(Application application) {
+		Map<String, String> properties = new HashMap<String, String>();
+
+		String serviceTemplatesUrl = this.createServiceTemplatesUrl(application.getId());
+
+		String propertiesUrl = null;
+		try {
+			propertiesUrl = serviceTemplatesUrl + "/"
+					+ URLEncoder.encode(URLEncoder.encode(this.getServiceTemplateId(application).toString(), "UTF-8"))
+					+ Constants.OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS + Constants.OPENTOSCACONTAIENRAPI_PATH_PROPERTIES;
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String xmlFragment = this.getJSONResource(propertiesUrl).getString("xml_fragment");
+
+		Element propRootElement = this.parseStringToDom(xmlFragment);
+
+		if (propRootElement != null && propRootElement.getLocalName().equals("Properties")) {
+			NodeList childNodes = propRootElement.getChildNodes();
+
+			for (int index = 0; index < childNodes.getLength(); index++) {
+				if (childNodes.item(index).getNodeType() == Node.ELEMENT_NODE
+						&& !childNodes.item(index).getLocalName().equals("PropertyMappings")) {
+					Element propertyElement = (Element) childNodes.item(index);
+					properties.put(propertyElement.getLocalName(), propertyElement.getTextContent());
+				}
+			}
+		}
+
+		return properties;
+	}
+
+	Element parseStringToDom(String xmlString) {
+		Document doc = null;
+		try {
+			DocumentBuilderFactory docFac = DocumentBuilderFactory.newInstance();
+			docFac.setNamespaceAware(true);
+			doc = docFac.newDocumentBuilder()
+					.parse(new InputSource(new StringReader(xmlString)));
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (doc != null) {
+			return doc.getDocumentElement();
+		} else {
+			return null;
+		}
 	}
 
 	Map<String, String> getServiceInstanceProperties(String serviceInstanceId) {
@@ -632,7 +703,138 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		return propMap;
 	}
-	
+
+	List<RelationshipTemplate> getRelationshipTemplates(Application application) {
+		QName serviceTemplateId = this.getServiceTemplateId(application);
+
+		List<RelationshipTemplate> relationshipTemplates = new ArrayList<RelationshipTemplate>();
+
+		String definitionsXmlString = this.getServiceTemplateXML(application);
+		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
+
+		try {
+			NodeList relationshipTemplateElementList = this.queryNodes(definitionsRootElement,
+					"//*[local-name()='RelationshipTemplate']");
+
+			for (int index = 0; index < relationshipTemplateElementList.getLength(); index++) {
+				if (relationshipTemplateElementList.item(index).getNodeType() == Node.ELEMENT_NODE) {
+					Element relationshipTemplateElement = (Element) relationshipTemplateElementList.item(index);
+
+					String type = relationshipTemplateElement.getAttribute("type");
+					String[] typeSplit = type.split(":");
+					String prefix = typeSplit[0];
+					String localName = typeSplit[1];
+					String namespace = relationshipTemplateElement.getAttribute("xmlns:" + prefix);
+
+					NodeList childNodes = relationshipTemplateElement.getChildNodes();
+
+					String sourceNode = null;
+					String targetNode = null;
+					for (int index2 = 0; index2 < childNodes.getLength(); index2++) {
+						if (childNodes.item(index2).getNodeType() == Node.ELEMENT_NODE) {
+							Element childNode = (Element) childNodes.item(index2);
+							switch (childNode.getLocalName()) {
+							case "SourceElement":
+								sourceNode = childNode.getAttribute("ref");
+								break;
+							case "TargetElement":
+								targetNode = childNode.getAttribute("ref");
+								break;
+							}
+						}
+					}
+
+					relationshipTemplates.add(new RelationshipTemplate(relationshipTemplateElement.getAttribute("id"),
+							serviceTemplateId, new QName(namespace, localName), sourceNode, targetNode));
+				}
+			}
+		} catch (XPathExpressionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return relationshipTemplates;
+
+	}
+
+	List<NodeTemplate> getNodeTemplates(Application application) {
+		QName serviceTemplateId = this.getServiceTemplateId(application);
+
+		List<NodeTemplate> nodeTemplates = new ArrayList<NodeTemplate>();
+
+		String definitionsXmlString = this.getServiceTemplateXML(application);
+		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
+
+		try {
+			NodeList nodeTemplateElementList = this.queryNodes(definitionsRootElement,
+					"//*[local-name()='NodeTemplate']");
+
+			for (int index = 0; index < nodeTemplateElementList.getLength(); index++) {
+				if (nodeTemplateElementList.item(index).getNodeType() == Node.ELEMENT_NODE) {
+					Element nodeTemplateElement = (Element) nodeTemplateElementList.item(index);
+
+					String type = nodeTemplateElement.getAttribute("type");
+					String[] typeSplit = type.split(":");
+					String prefix = typeSplit[0];
+					String localName = typeSplit[1];
+
+					String namespace = nodeTemplateElement.getAttribute("xmlns:" + prefix);
+					nodeTemplates.add(new NodeTemplate(nodeTemplateElement.getAttribute("id"), serviceTemplateId,
+							new QName(namespace, localName)));
+				}
+			}
+		} catch (XPathExpressionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return nodeTemplates;
+	}
+
+	QName getServiceTemplateId(Application application) {
+		JSONObject serviceTemplatesJsonResp = this.getJSONResource(this.createServiceTemplatesUrl(application.getId()));
+		JSONArray serviceTemplatesJsonArray = serviceTemplatesJsonResp
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES);
+		return QName.valueOf(serviceTemplatesJsonArray.getJSONObject(0).getString("id"));
+	}
+
+	String getServiceTemplateXML(Application application) {
+		String definitionsUrl = this.createServiceTemplateDefinitionsUrl(application);
+		String definitionsContent = this.getOctetStreamResource(definitionsUrl);
+		return definitionsContent;
+	}
+
+	Node queryNode(Element rootElement, String query) throws XPathExpressionException {
+		XPath xPath = XPathFactory.newInstance().newXPath();
+		XPathExpression expression = xPath.compile(query);
+		Node node = (Node) expression.evaluate(rootElement, XPathConstants.NODE);
+		return node;
+	}
+
+	NodeList queryNodes(Element rootElement, String query) throws XPathExpressionException {
+		XPath xPath = XPathFactory.newInstance().newXPath();
+		XPathExpression expression = xPath.compile(query);
+		NodeList nodes = (NodeList) expression.evaluate(rootElement, XPathConstants.NODESET);
+		return nodes;
+	}
+
+	String getOctetStreamResource(String url) {
+		WebResource octetStreamResource = this.createWebResource(url);
+
+		ClientResponse instancePropertiesResponse = octetStreamResource.accept(MediaType.APPLICATION_OCTET_STREAM)
+				.get(ClientResponse.class);
+		return instancePropertiesResponse.getEntity(String.class);
+	}
+
+	String createServiceTemplateDefinitionsUrl(Application application) {
+		QName serviceTemplateId = this.getServiceTemplateId(application);
+		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + application.getId()
+				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT
+				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT_DEFINITIONS + "/servicetemplates__"
+				+ serviceTemplateId.getLocalPart() + ".tosca";
+
+	}
+
 	// @hahnml: Replace the container host in an URL with the actual host name. In
 	// Docker-based environments it depends from where the URL is resolved, inside a
 	// network of docker containers (use "containerHostInternal" as hostName) or

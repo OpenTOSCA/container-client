@@ -68,4 +68,5 @@ public class Application {
 	public String getMetadata() { //JSONObject
 		return this.metadata;
 	}
+	
 }
