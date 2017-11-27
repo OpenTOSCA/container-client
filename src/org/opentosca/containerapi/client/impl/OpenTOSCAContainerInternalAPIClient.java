@@ -61,16 +61,16 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	@Deprecated
 	String legacyContainerAPIUrl = "";
-	
+
 	List<String> filterManagementParameters(List<String> inputParams) {
 		List<String> filteredParams = new ArrayList<String>();
-		
-		for(String inputParam : inputParams) {
-			if(!Arrays.asList(Constants.OPENTOSCACONTAINERAPI_MANAGEMENT_PARAMETERS).contains(inputParam)) {
+
+		for (String inputParam : inputParams) {
+			if (!Arrays.asList(Constants.OPENTOSCACONTAINERAPI_MANAGEMENT_PARAMETERS).contains(inputParam)) {
 				filteredParams.add(inputParam);
 			}
 		}
-		
+
 		return filteredParams;
 	}
 
@@ -602,24 +602,30 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		try {
 			propertiesUrl = serviceTemplatesUrl + "/"
 					+ URLEncoder.encode(URLEncoder.encode(this.getServiceTemplateId(application).toString(), "UTF-8"))
-					+ Constants.OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS + Constants.OPENTOSCACONTAIENRAPI_PATH_PROPERTIES;
+					+ Constants.OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS
+					+ Constants.OPENTOSCACONTAIENRAPI_PATH_PROPERTIES;
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		String xmlFragment = this.getJSONResource(propertiesUrl).getString("xml_fragment");
+		JSONObject jsonObj = this.getJSONResource(propertiesUrl);
 
-		Element propRootElement = this.parseStringToDom(xmlFragment);
+		if (jsonObj.has("xml_fragment")) {
 
-		if (propRootElement != null && propRootElement.getLocalName().equals("Properties")) {
-			NodeList childNodes = propRootElement.getChildNodes();
+			String xmlFragment = this.getJSONResource(propertiesUrl).getString("xml_fragment");
 
-			for (int index = 0; index < childNodes.getLength(); index++) {
-				if (childNodes.item(index).getNodeType() == Node.ELEMENT_NODE
-						&& !childNodes.item(index).getLocalName().equals("PropertyMappings")) {
-					Element propertyElement = (Element) childNodes.item(index);
-					properties.put(propertyElement.getLocalName(), propertyElement.getTextContent());
+			Element propRootElement = this.parseStringToDom(xmlFragment);
+
+			if (propRootElement != null && propRootElement.getLocalName().equals("Properties")) {
+				NodeList childNodes = propRootElement.getChildNodes();
+
+				for (int index = 0; index < childNodes.getLength(); index++) {
+					if (childNodes.item(index).getNodeType() == Node.ELEMENT_NODE
+							&& !childNodes.item(index).getLocalName().equals("PropertyMappings")) {
+						Element propertyElement = (Element) childNodes.item(index);
+						properties.put(propertyElement.getLocalName(), propertyElement.getTextContent());
+					}
 				}
 			}
 		}
@@ -632,8 +638,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		try {
 			DocumentBuilderFactory docFac = DocumentBuilderFactory.newInstance();
 			docFac.setNamespaceAware(true);
-			doc = docFac.newDocumentBuilder()
-					.parse(new InputSource(new StringReader(xmlString)));
+			doc = docFac.newDocumentBuilder().parse(new InputSource(new StringReader(xmlString)));
 		} catch (SAXException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
