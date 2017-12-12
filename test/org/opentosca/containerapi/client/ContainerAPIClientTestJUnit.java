@@ -252,12 +252,14 @@ public class ContainerAPIClientTestJUnit {
 
 	@Test
 	public void test8TestInstanceRuns() {
-		for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
+		if (runConfiguration.instanceRuns != null){
+			for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
 
-			Map<String, String> output = this.client.invokeServiceInstanceOperation(instance, instanceRun.interfaceName,
-					instanceRun.operationName, instanceRun.inputParams);
+				Map<String, String> output = this.client.invokeServiceInstanceOperation(instance, instanceRun.interfaceName,
+						instanceRun.operationName, instanceRun.inputParams);
 
-			assertFalse(output.isEmpty());
+				assertFalse(output.isEmpty());
+			}
 		}
 	}
 
