@@ -132,15 +132,15 @@ public class ContainerAPIClientTestJUnit {
 		System.out.println(testName.getMethodName());
 
 		// should always be one application and service instance for this test class
-		switch (testName.getMethodName()) {
-		case "test5GetInputParameters[0]":
-		case "test6CreateInstance[0]":
-		case "test9DeleteApplication[0]":
+		switch (testName.getMethodName().split("\\[")[0]) {
+		case "test5GetInputParameters":
+		case "test6CreateInstance":
+		case "test9DeleteApplication":
 			this.application = client.getApplications().get(0);
 			break;
-		case "test7GetInstanceProperties[0]":
-		case "test8TestInstanceRuns[0]":
-		case "test999DeleteInstance[0]":
+		case "test7GetInstanceProperties":
+		case "test8TestInstanceRuns":
+		case "test999DeleteInstance":
 			this.application = client.getApplications().get(0);
 			// just makes the the testing more robust
 			this.instance = this.getInstanceBasedOnHighestId(client.getServiceInstances(application));
