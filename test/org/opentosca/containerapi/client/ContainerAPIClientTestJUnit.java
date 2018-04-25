@@ -27,7 +27,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfiguration;
-import org.opentosca.containerapi.client.impl.OpenTOSCAContainerAPIClient;
+import org.opentosca.containerapi.client.impl.OpenTOSCAContainerLegacyAPIClient;
 import org.opentosca.containerapi.client.impl.OpenTOSCAContainerInternalAPIClient;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.ServiceInstance;
@@ -121,7 +121,7 @@ public class ContainerAPIClientTestJUnit {
 
 	public ContainerAPIClientTestJUnit(TestRunConfiguration params) {
 		runConfiguration = params;
-		client = new OpenTOSCAContainerAPIClient(runConfiguration.containerHost, runConfiguration.containerHostInternal);
+		client = new OpenTOSCAContainerLegacyAPIClient(runConfiguration.containerHost, runConfiguration.containerHostInternal);
 	}
 
 	@Rule

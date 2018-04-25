@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.xml.namespace.QName;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient;
 import org.opentosca.containerapi.client.model.Application;
@@ -30,15 +32,15 @@ import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.MultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
 
-public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPIClient
+public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInternalAPIClient
 		implements IOpenTOSCAContainerAPIClient {
 
-	public OpenTOSCAContainerAPIClient() {
+	public OpenTOSCAContainerLegacyAPIClient() {
 		this.containerUrl = URI.create("http://localhost:1337/");
 		this.setLegacyContainerAPIUrl("http://localhost:1337/containerapi");
 	}
 
-	public OpenTOSCAContainerAPIClient(final String containerHost, final String containerHostInternal) {
+	public OpenTOSCAContainerLegacyAPIClient(final String containerHost, final String containerHostInternal) {
 		this.containerHost = containerHost;
 		this.containerHostInternal = containerHostInternal;
 		this.containerUrl = URI.create("http://" + containerHost + ":1337/");
@@ -83,8 +85,11 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 
 		// http://192.168.209.199:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar/
 		// ServiceTemplates/%257Bhttp%253A%252F%252Fopentosca.org%252Fservicetemplates%257DMyTinyToDo_Bare_Docker/Instances
-		String mainServiceTemplateInstancesUrl = this.getLegacyMainServiceTemplateURL(application.getId())
-				+ "/Instances";
+		String mainServiceTemplateUrl = this.getLegacyMainServiceTemplateURL(application.getId());
+
+		String mainServiceTemplateInstancesUrl = mainServiceTemplateUrl + "/Instances";
+		String mainServiceTemplateName = mainServiceTemplateUrl.substring(mainServiceTemplateUrl.lastIndexOf("/") + 1);
+		QName qname = QName.valueOf(URLDecoder.decode(URLDecoder.decode(mainServiceTemplateName)));
 
 		// POST Request: Starts Plan
 		System.out.println("input properties: " + planInputJsonObj);
@@ -111,10 +116,10 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 				int currentCount = jsonObj.getJSONArray("References").length();
 				if (currentCount > 1) { // Self + service instance
 					JSONArray jsonRefs = jsonObj.getJSONArray("References");
-	
+
 					for (int index = 0; index < jsonRefs.length(); index++) {
 						JSONObject jsonRef = jsonRefs.getJSONObject(index);
-	
+
 						if (jsonRef.has("title") && !jsonRef.getString("title").equals("Self")) {
 							// @hahnml: Resolve the internal host in the URL to the external one
 							serviceInstanceUrl = resolveUrl(jsonRef.getString("href"), this.containerHost);
@@ -129,11 +134,11 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 					Thread.sleep(10000); // 10 seconds
 				} catch (InterruptedException e) {
 				}
-				
-			} catch (JSONException e){
+
+			} catch (JSONException e) {
 				// catch JSONException which is thrown if the plan instance is not available yet
 				System.out.println("Waiting for plan instance to be available");
-				
+
 				try {
 					Thread.sleep(10000); // 10 seconds
 				} catch (InterruptedException e2) {
@@ -186,7 +191,9 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			}
 		}
 
-		ServiceInstance createdInstance = new ServiceInstance(application.getId(), serviceInstanceUrl,
+		Long id = Long.valueOf(serviceInstanceUrl.substring(serviceInstanceUrl.lastIndexOf("/") + 1));
+		ServiceInstance createdInstance = new ServiceInstance(application.getId(),
+				this.getServiceTemplateId(application), id, serviceInstanceUrl,
 				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
 				planOutputs);
 
@@ -210,6 +217,7 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 	public Application deployApplication(final String filePath) throws Exception {
 		String url = this.getLegacyContainerAPIUrl() + "/CSARs";
 		File fileObj = new File(filePath);
+		String absPath = fileObj.getAbsolutePath();
 		if (fileObj != null && fileObj.exists() && fileObj.isFile()) {
 			WebResource webResource = createWebResource(url);
 			// the file to upload, represented as FileDataBodyPart
@@ -256,9 +264,9 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			// instances, String displayName,
 			// String version, String description, String author, List<Interface>
 			// interfaces, String metadata
-			Application deployedAplication = new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
-					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
-					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr);
+			Application deployedAplication = new Application(csarName, this.filterManagementParameters(inputParams),
+					new ArrayList<String>(), this.getDisplayName(appProps), this.getVersion(appProps),
+					this.getDescription(appProps), this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr);
 
 			while (!arePlansDeployed(deployedAplication)) {
 				try {
@@ -319,9 +327,9 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 				}
 			}
 
-			apps.add(new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(), this.getDisplayName(appProps),
-					this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
-					this.getInterfaces(csarName), metadataStr));
+			apps.add(new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
+					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
+					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr));
 		}
 		return apps;
 	}
@@ -354,12 +362,10 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 				e.printStackTrace();
 			}
 		}
-		
-		
 
-		return new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(), this.getDisplayName(appProps),
-				this.getVersion(appProps), this.getDescription(appProps), this.getAuthor(appProps),
-				this.getInterfaces(csarName), metadataStr);
+		return new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
+				this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
+				this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr);
 	}
 
 	@Override
@@ -417,6 +423,11 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 						resolveUrl(
 								this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()),
 								this.containerHostInternal));
+			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
+				// @hahnml: Resolve the external host in the URL to the internal one
+				inputParam.put("Value",
+						URI.create(resolveUrl(this.getContainerUrl() + instance.getServiceInstanceUrl().toString(),
+								this.containerHostInternal)));
 			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()));
@@ -540,10 +551,13 @@ public class OpenTOSCAContainerAPIClient extends OpenTOSCAContainerInternalAPICl
 			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), serviceInstance.getApplicationId()));
-			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceID")) {
+			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
+
 				inputParam.put("Value",
-						URI.create(resolveUrl(serviceInstance.getURL().toString(), this.containerHostInternal)));
+						URI.create(
+								resolveUrl(this.getContainerUrl() + serviceInstance.getServiceInstanceUrl().toString(),
+										this.containerHostInternal)));
 			}
 		}
 

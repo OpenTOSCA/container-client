@@ -588,9 +588,26 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	ServiceInstance getServiceInstance(String applicationId, String serviceInstanceUrl) {
-		return new ServiceInstance(applicationId, serviceInstanceUrl,
+		Long id = Long.valueOf(serviceInstanceUrl.substring(serviceInstanceUrl.lastIndexOf("/") + 1));
+
+		return new ServiceInstance(applicationId, this.getServiceTemplateId(applicationId), id, serviceInstanceUrl,
 				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
 				new HashMap<String, String>());
+	}
+	
+	Map<String, String> getTOSCAMetaData(Application application) {
+		Map<String,String> toscaMetaMap = new HashMap<String,String>();
+		String toscaMetadataUrl = this.createTOSCAMetaDataURL(application);
+		
+		String toscaMetaDataContent = this.getOctetStreamResource(toscaMetadataUrl);
+		
+		for(String dataLine : toscaMetaDataContent.split("\n")) {
+			if(!dataLine.trim().isEmpty() && dataLine.contains(":")) {
+				String[] keyValSplit = dataLine.split(":");
+				toscaMetaMap.put(keyValSplit[0].trim(), keyValSplit[1].trim());
+			}
+		}
+		return toscaMetaMap;
 	}
 
 	Map<String, String> getServiceTemplateProperties(Application application) {
@@ -808,6 +825,13 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		return nodeTemplates;
 	}
 
+	QName getServiceTemplateId(String applicationId) {
+		JSONObject serviceTemplatesJsonResp = this.getJSONResource(this.createServiceTemplatesUrl(applicationId));
+		JSONArray serviceTemplatesJsonArray = serviceTemplatesJsonResp
+				.getJSONArray(Constants.OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES);
+		return QName.valueOf(serviceTemplatesJsonArray.getJSONObject(0).getString("id"));
+	}
+
 	QName getServiceTemplateId(Application application) {
 		JSONObject serviceTemplatesJsonResp = this.getJSONResource(this.createServiceTemplatesUrl(application.getId()));
 		JSONArray serviceTemplatesJsonArray = serviceTemplatesJsonResp
@@ -842,14 +866,18 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.get(ClientResponse.class);
 		return instancePropertiesResponse.getEntity(String.class);
 	}
+		
+	String createTOSCAMetaDataURL(Application application) {
+		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + application.getId()
+		+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT + Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFOLDER + Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFILENAME;
+	}
 
-	String createServiceTemplateDefinitionsUrl(Application application) {
-		QName serviceTemplateId = this.getServiceTemplateId(application);
+	String createServiceTemplateDefinitionsUrl(Application application) {				
+		Map<String,String> metaData = this.getTOSCAMetaData(application);		
+		String relPath = metaData.get("Entry-Definitions");	
 		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + application.getId()
 				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT
-				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT_DEFINITIONS + "/servicetemplates__"
-				+ serviceTemplateId.getLocalPart() + ".tosca";
-
+				+ "/" + relPath;
 	}
 
 	// @hahnml: Replace the container host in an URL with the actual host name. In

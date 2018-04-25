@@ -1,7 +1,11 @@
 package org.opentosca.containerapi.client.model;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Map;
+
+import javax.xml.namespace.QName;
 
 /**
  * 
@@ -11,25 +15,29 @@ import java.util.Map;
 public class ServiceInstance {
 	
 	private String applicationId;
-	private URI uri; // url
+	private URI legacyUri; // url
 	private Map<String, String> properties; // 
 	private Map<String, String> planOutputParameters = null; // instantiation output parameters
-	private String state;
+	private String state;	
+	private Long id;
+	private QName serviceTemplateId;
 	
-	public ServiceInstance(String applicationId, String uri, Map<String, String> properties, String state, Map<String,String> planOutputParameters) {
-		this.uri = URI.create(uri);
+	public ServiceInstance(String applicationId, QName serviceTemplateId,  Long id, String legacyUri, Map<String, String> properties, String state, Map<String,String> planOutputParameters) {
+		this.legacyUri = URI.create(legacyUri);
 		this.applicationId = applicationId;
 		this.properties = properties;
 		this.state = state;
 		this.planOutputParameters = planOutputParameters;
+		this.id = id;
+		this.serviceTemplateId = serviceTemplateId;
 	}
 
 	public URI getURL() {
-		return uri;
+		return legacyUri;
 	}
 	
-	public int getId() {
-		return Integer.valueOf(this.uri.getPath().substring(this.uri.getPath().lastIndexOf("/") + 1 ));
+	public Long getId() {
+		return this.id; 
 	}
 	
 	public Map<String,String> getPlanOutputParameters() {
@@ -47,4 +55,18 @@ public class ServiceInstance {
 	public String getState(){
 		return this.state;
 	}
+	
+	public URI getLegacyServiceInstanceUrl() {
+		return this.legacyUri;
+	}
+	
+	public URI getServiceInstanceUrl() {
+		try {
+			return new URI("csars/" + applicationId + "/servicetemplates/" + URLEncoder.encode(URLEncoder.encode(serviceTemplateId.toString())) + "/instances/" + this.id);
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+		
  }

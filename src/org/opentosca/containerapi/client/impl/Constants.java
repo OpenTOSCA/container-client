@@ -52,5 +52,9 @@ public class Constants {
 	public final static String OPENTOSCACONTAIENRAPI_PATH_PROPERTIES = "/properties";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_CONTENT = "/content";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_CONTENT_DEFINITIONS = "/Definitions";
+	
+	public final static String OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFOLDER = "/TOSCA-Metadata";
+	public final static String OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFILENAME = "/TOSCA.meta";
+	
 
 }
