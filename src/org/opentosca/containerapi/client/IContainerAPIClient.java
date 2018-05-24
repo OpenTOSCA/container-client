@@ -10,7 +10,7 @@ import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 import org.opentosca.containerapi.client.model.ServiceTemplate;
 
-public interface IOpenTOSCAContainerAPIClient {
+public interface IContainerAPIClient {
 
 	String getContainerAPIUrl();
 

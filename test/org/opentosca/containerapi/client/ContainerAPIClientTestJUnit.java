@@ -27,8 +27,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfiguration;
-import org.opentosca.containerapi.client.impl.OpenTOSCAContainerLegacyAPIClient;
-import org.opentosca.containerapi.client.impl.OpenTOSCAContainerInternalAPIClient;
+import org.opentosca.containerapi.client.impl.ContainerAPIClientImpl;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 import org.opentosca.containerapi.client.model.ServiceTemplate;
@@ -38,7 +37,7 @@ import org.opentosca.containerapi.client.model.ServiceTemplate;
 public class ContainerAPIClientTestJUnit {
 
 	private final TestRunConfiguration runConfiguration; // updated for each csar
-	private final IOpenTOSCAContainerAPIClient client;
+	private final IContainerAPIClient client;
 
 	private ServiceInstance instance;
 	private Application application;
@@ -99,11 +98,11 @@ public class ContainerAPIClientTestJUnit {
 
 						}
 
-						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal, testCsarName, testInputParams,
-								run));
+						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
+								testCsarName, testInputParams, run));
 					} else {
-						params.add(
-								new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal, testCsarName, testInputParams));
+						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
+								testCsarName, testInputParams));
 					}
 				}
 
@@ -121,7 +120,7 @@ public class ContainerAPIClientTestJUnit {
 
 	public ContainerAPIClientTestJUnit(TestRunConfiguration params) {
 		runConfiguration = params;
-		client = new OpenTOSCAContainerLegacyAPIClient(runConfiguration.containerHost, runConfiguration.containerHostInternal);
+		client = new ContainerAPIClientImpl(runConfiguration.containerHost);
 	}
 
 	@Rule
@@ -150,16 +149,14 @@ public class ContainerAPIClientTestJUnit {
 
 	private ServiceInstance getInstanceBasedOnHighestId(List<ServiceInstance> serviceInstances) {
 		ServiceInstance highestId = null;
-		for (ServiceInstance serviceInstance : serviceInstances) {			
-			if(highestId == null || highestId.getId() < serviceInstance.getId()) {
+		for (ServiceInstance serviceInstance : serviceInstances) {
+			if (highestId == null || highestId.getId() < serviceInstance.getId()) {
 				highestId = serviceInstance;
 			}
 		}
 
 		return highestId;
 	}
-	
-	
 
 	@Test
 	public void test1DeployApplication() {
@@ -210,23 +207,22 @@ public class ContainerAPIClientTestJUnit {
 		}
 		assertEquals(1, applications.size());
 	}
-	
+
 	@Test
 	public void test4GetServiceTemplates() {
 		System.out.println(runConfiguration.testCsarName);
 		List<Application> applications = client.getApplications();
 		System.out.println("Installed Applications: " + applications.size());
-		
 
 		for (Application app : applications) {
-			
+
 			ServiceTemplate servTemplate = client.getServiceTemplate(app);
 			assertNotNull(servTemplate);
-			
+
 			assertNotEquals(0, servTemplate.getNodeTemplates().size());
 			assertNotEquals(0, servTemplate.getRelationshipTemplates().size());
 		}
-		
+
 	}
 
 	@Test
@@ -252,11 +248,11 @@ public class ContainerAPIClientTestJUnit {
 
 	@Test
 	public void test8TestInstanceRuns() {
-		if (runConfiguration.instanceRuns != null){
+		if (runConfiguration.instanceRuns != null) {
 			for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
 
-				Map<String, String> output = this.client.invokeServiceInstanceOperation(instance, instanceRun.interfaceName,
-						instanceRun.operationName, instanceRun.inputParams);
+				Map<String, String> output = this.client.invokeServiceInstanceOperation(instance,
+						instanceRun.interfaceName, instanceRun.operationName, instanceRun.inputParams);
 
 				assertFalse(output.isEmpty());
 			}
@@ -268,13 +264,13 @@ public class ContainerAPIClientTestJUnit {
 		boolean result = client.terminateServiceInstance(instance);
 		assertTrue(result);
 	}
-	
+
 	@Test
 	public void test99GetApplication() {
 		Application app = client.getApplication(runConfiguration.testCsarName);
 		assertNotNull(app);
-		System.out.println("Application name: " + app.getId() + " Application instantiation input: "
-				+ app.getInputParameters());
+		System.out.println(
+				"Application name: " + app.getId() + " Application instantiation input: " + app.getInputParameters());
 		System.out.println("Metadata: \n" + app.getMetadata());
 	}
 
