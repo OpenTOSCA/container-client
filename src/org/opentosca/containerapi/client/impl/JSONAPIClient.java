@@ -9,6 +9,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.sun.jersey.api.client.Client;
@@ -25,7 +26,16 @@ public abstract class JSONAPIClient {
 	
 		ClientResponse instancePropertiesResponse = instancePropertiesResource.accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
-		return new JSONObject(instancePropertiesResponse.getEntity(String.class));
+		String jsonData = instancePropertiesResponse.getEntity(String.class);
+		return new JSONObject(jsonData);
+	}
+	
+	protected JSONArray getJSONArrayResource(String url) {
+		WebResource instancePropertiesResource = this.createWebResource(url);
+	
+		ClientResponse instancePropertiesResponse = instancePropertiesResource.accept(MediaType.APPLICATION_JSON)
+				.get(ClientResponse.class);
+		return new JSONArray(instancePropertiesResponse.getEntity(String.class));
 	}
 	
 	protected JSONObject getJSONResource(URI url) {

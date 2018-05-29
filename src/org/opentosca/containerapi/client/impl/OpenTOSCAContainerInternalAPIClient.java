@@ -8,6 +8,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.Interface;
+import org.opentosca.containerapi.client.model.Log;
 import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.NodeTemplate;
 import org.opentosca.containerapi.client.model.RelationInstance;
@@ -592,7 +595,39 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		return new ServiceInstance(applicationId, this.getServiceTemplateId(applicationId), id, serviceInstanceUrl,
 				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
-				new HashMap<String, String>());
+				new HashMap<String, String>(), this.getBuildPlanLogs(serviceInstanceUrl));
+	}
+	
+	Collection<Log> getBuildPlanLogs(String serviceInstanceUrl) {
+		Collection<Log> logs = new ArrayList<>();
+		String planInstancesUrl = serviceInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_PLANINSTANCES;
+		
+		
+		JSONObject jsonObj = this.getJSONResource(planInstancesUrl);
+		JSONArray refs = jsonObj.getJSONArray("References");
+		
+		String planInstanceUrl = "";
+		for(int i = 0 ; i < refs.length(); i++) {
+			if(refs.getJSONObject(i).has("title") && !refs.getJSONObject(i).getString("title").equals("Self")) {
+				planInstanceUrl = refs.getJSONObject(i).getString("href");
+			}
+		}
+		
+		if(planInstanceUrl.isEmpty()) {
+			return logs;
+		} else {
+			String logsUrl = planInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_LOGS;
+			
+			JSONArray jsonAr = this.getJSONArrayResource(logsUrl);
+			
+			for(int i = 0 ; i < jsonAr.length(); i++) {
+				JSONObject jsonLogObj = jsonAr.getJSONObject(i);			
+				logs.add(new Log(jsonLogObj.getLong("timestamp"), jsonLogObj.getString("status"), jsonLogObj.getString("type"), jsonLogObj.getString("message")));
+			}
+						
+			
+			return logs;
+		}
 	}
 	
 	Map<String, String> getTOSCAMetaData(Application application) {

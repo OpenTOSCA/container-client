@@ -147,57 +147,67 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			// FIXME timeout to break the loop
 		}
-
-		try {
-			Thread.sleep(1000); // 10 seconds
-		} catch (InterruptedException e) {
-		}
-
-		// /Instances/1/PlanInstances/1486950673724-0/State
-		String planInstanceUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/State";
-		System.out.println(planInstanceUrl);
-
-		boolean instanceFinished = false;
-		while (!instanceFinished) {
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			JSONObject planInstanceRespJson = this.getJSONResource(planInstanceUrl);
-			System.out.println(planInstanceRespJson);
-
-			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
-				instanceFinished = true;
-			}
-			// FIXME timeout to break the loop
-		}
-
-		Map<String, String> planOutputs = new HashMap<String, String>();
-		String planInstanceOutputUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
-
-		JSONObject planInstanceOutputJson = this.getJSONResource(planInstanceOutputUrl);
-
-		JSONArray planOutputParams = planInstanceOutputJson.getJSONArray("outputs");
-
-		for (int index = 0; index < planOutputParams.length(); index++) {
-			JSONObject outputParamJson = planOutputParams.getJSONObject(index);
-			if (outputParamJson.has("name") & outputParamJson.has("value")) {
-				String name = outputParamJson.getString("name");
-				String value = outputParamJson.getString("value");
-				planOutputs.put(name, value);
-			}
-		}
-
+		
+		
 		Long id = Long.valueOf(serviceInstanceUrl.substring(serviceInstanceUrl.lastIndexOf("/") + 1));
+		
 		ServiceInstance createdInstance = new ServiceInstance(application.getId(),
 				this.getServiceTemplateId(application), id, serviceInstanceUrl,
 				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
-				planOutputs);
+				new HashMap<String, String>(), this.getBuildPlanLogs(serviceInstanceUrl));
 
 		return createdInstance;
+		
+
+//		try {
+//			Thread.sleep(1000); // 1 second
+//		} catch (InterruptedException e) {
+//		}
+//
+//		// /Instances/1/PlanInstances/1486950673724-0/State
+//		String planInstanceStateUrl = serviceInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_PLANINSTANCES + "/" + correlationId + Constants.OPENTOSCACONTAINERAPI_PATH_STATE;
+//		System.out.println(planInstanceStateUrl);
+//
+//		boolean instanceFinished = false;
+//		while (!instanceFinished) {
+//			try {
+//				Thread.sleep(2000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//
+//			JSONObject planInstanceRespJson = this.getJSONResource(planInstanceStateUrl);
+//			System.out.println(planInstanceRespJson);
+//
+//			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
+//				instanceFinished = true;
+//			}
+//			// FIXME timeout to break the loop
+//		}
+//
+//		Map<String, String> planOutputs = new HashMap<String, String>();
+//		String planInstanceOutputUrl = serviceInstanceUrl + "/PlanInstances/" + correlationId + "/Output";
+//
+//		JSONObject planInstanceOutputJson = this.getJSONResource(planInstanceOutputUrl);
+//
+//		JSONArray planOutputParams = planInstanceOutputJson.getJSONArray("outputs");
+//
+//		for (int index = 0; index < planOutputParams.length(); index++) {
+//			JSONObject outputParamJson = planOutputParams.getJSONObject(index);
+//			if (outputParamJson.has("name") & outputParamJson.has("value")) {
+//				String name = outputParamJson.getString("name");
+//				String value = outputParamJson.getString("value");
+//				planOutputs.put(name, value);
+//			}
+//		}
+//
+//		ServiceInstance createdInstance = new ServiceInstance(application.getId(),
+//				this.getServiceTemplateId(application), id, serviceInstanceUrl,
+//				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
+//				planOutputs, this.getBuildPlanLogs(serviceInstanceUrl));
+
+//		return createdInstance;
 	}
 
 	/*
