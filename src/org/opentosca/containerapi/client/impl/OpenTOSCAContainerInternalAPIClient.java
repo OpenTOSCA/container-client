@@ -101,7 +101,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			for (int i = 0; i < nodeList.getLength(); i++) {
 				if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
 					Element childElem = (Element) nodeList.item(i);
-					return this.findPropertiesElement(element);
+					return this.findPropertiesElement(childElem);
 				}
 			}
 		}
@@ -151,15 +151,19 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION);
 	}
 
-	Map<String, String> getInstanceProperties(String nodeInstanceUrl)
+	Map<String, String> getInstanceProperties(String legacyInstanceUrl)
 			throws SAXException, IOException, ParserConfigurationException {
 		WebResource nodeInstancePropertiesResource = this
-				.createWebResource(nodeInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_PROPERTIES);
+				.createWebResource(legacyInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_PROPERTIES);
 
-		ClientResponse nodeInstancePropertiesResponse = nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML)
+		ClientResponse instancePropertiesResponse = nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML)
 				.get(ClientResponse.class);
+		
+		if(instancePropertiesResponse.getStatus() == 204) {
+			return new HashMap<>();
+		}
 
-		String responseBody = nodeInstancePropertiesResponse.getEntity(String.class);
+		String responseBody = instancePropertiesResponse.getEntity(String.class);
 
 		DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
 		fac.setNamespaceAware(true);
@@ -169,7 +173,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		Document doc = fac.newDocumentBuilder().parse(sorce);
 
-		Element properties = this.findPropertiesElement(doc.getDocumentElement());
+		Element properties = doc.getDocumentElement();
 
 		Map<String, String> propMap = this.readPropertiesElementToMap(properties);
 
@@ -363,10 +367,19 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
 	}
 
+	String getNodeTemplateNameFromLegacyNodeInstanceURI(String nodeInstanceUrl) {
+		String tempString = nodeInstanceUrl.substring(nodeInstanceUrl.lastIndexOf("NodeTemplates/"))
+				.replace("NodeTemplates/", "");
+		tempString = tempString.substring(0, tempString.lastIndexOf("/Instances"));
+
+		return tempString;
+	}
+
 	NodeInstance getNodeInstanceFromNodeInstanceUrl(String serviceInstanceId, String nodeInstanceUrl) {
 		try {
 			return new NodeInstance(serviceInstanceId, nodeInstanceUrl, this.getInstanceProperties(nodeInstanceUrl),
-					this.getInstanceState(nodeInstanceUrl));
+					this.getInstanceState(nodeInstanceUrl),
+					this.getNodeTemplateNameFromLegacyNodeInstanceURI(nodeInstanceUrl));
 		} catch (SAXException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -375,7 +388,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			e.printStackTrace();
 		}
 		return new NodeInstance(serviceInstanceId, nodeInstanceUrl, new HashMap<String, String>(),
-				this.getInstanceState(nodeInstanceUrl));
+				this.getInstanceState(nodeInstanceUrl),
+				this.getNodeTemplateNameFromLegacyNodeInstanceURI(nodeInstanceUrl));
 	}
 
 	List<NodeInstance> getNodeInstancesFromNodeTemplateUrl(String serviceInstanceId, String nodeTemplateUrl) {
@@ -597,47 +611,46 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				this.getServiceInstanceProperties(serviceInstanceUrl), this.getServiceInstanceState(serviceInstanceUrl),
 				new HashMap<String, String>(), this.getBuildPlanLogs(serviceInstanceUrl));
 	}
-	
+
 	Collection<Log> getBuildPlanLogs(String serviceInstanceUrl) {
 		Collection<Log> logs = new ArrayList<>();
 		String planInstancesUrl = serviceInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_PLANINSTANCES;
-		
-		
+
 		JSONObject jsonObj = this.getJSONResource(planInstancesUrl);
 		JSONArray refs = jsonObj.getJSONArray("References");
-		
+
 		String planInstanceUrl = "";
-		for(int i = 0 ; i < refs.length(); i++) {
-			if(refs.getJSONObject(i).has("title") && !refs.getJSONObject(i).getString("title").equals("Self")) {
+		for (int i = 0; i < refs.length(); i++) {
+			if (refs.getJSONObject(i).has("title") && !refs.getJSONObject(i).getString("title").equals("Self")) {
 				planInstanceUrl = refs.getJSONObject(i).getString("href");
 			}
 		}
-		
-		if(planInstanceUrl.isEmpty()) {
+
+		if (planInstanceUrl.isEmpty()) {
 			return logs;
 		} else {
 			String logsUrl = planInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_LOGS;
-			
+
 			JSONArray jsonAr = this.getJSONArrayResource(logsUrl);
-			
-			for(int i = 0 ; i < jsonAr.length(); i++) {
-				JSONObject jsonLogObj = jsonAr.getJSONObject(i);			
-				logs.add(new Log(jsonLogObj.getLong("timestamp"), jsonLogObj.getString("status"), jsonLogObj.getString("type"), jsonLogObj.getString("message")));
+
+			for (int i = 0; i < jsonAr.length(); i++) {
+				JSONObject jsonLogObj = jsonAr.getJSONObject(i);
+				logs.add(new Log(jsonLogObj.getLong("timestamp"), jsonLogObj.getString("status"),
+						jsonLogObj.getString("type"), jsonLogObj.getString("message")));
 			}
-						
-			
+
 			return logs;
 		}
 	}
-	
+
 	Map<String, String> getTOSCAMetaData(Application application) {
-		Map<String,String> toscaMetaMap = new HashMap<String,String>();
+		Map<String, String> toscaMetaMap = new HashMap<String, String>();
 		String toscaMetadataUrl = this.createTOSCAMetaDataURL(application);
-		
+
 		String toscaMetaDataContent = this.getOctetStreamResource(toscaMetadataUrl);
-		
-		for(String dataLine : toscaMetaDataContent.split("\n")) {
-			if(!dataLine.trim().isEmpty() && dataLine.contains(":")) {
+
+		for (String dataLine : toscaMetaDataContent.split("\n")) {
+			if (!dataLine.trim().isEmpty() && dataLine.contains(":")) {
 				String[] keyValSplit = dataLine.split(":");
 				toscaMetaMap.put(keyValSplit[0].trim(), keyValSplit[1].trim());
 			}
@@ -901,18 +914,19 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				.get(ClientResponse.class);
 		return instancePropertiesResponse.getEntity(String.class);
 	}
-		
+
 	String createTOSCAMetaDataURL(Application application) {
 		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + application.getId()
-		+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT + Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFOLDER + Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFILENAME;
+				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT
+				+ Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFOLDER
+				+ Constants.OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFILENAME;
 	}
 
-	String createServiceTemplateDefinitionsUrl(Application application) {				
-		Map<String,String> metaData = this.getTOSCAMetaData(application);		
-		String relPath = metaData.get("Entry-Definitions");	
+	String createServiceTemplateDefinitionsUrl(Application application) {
+		Map<String, String> metaData = this.getTOSCAMetaData(application);
+		String relPath = metaData.get("Entry-Definitions");
 		return this.getContainerUrl().toString() + Constants.OPENTOSCACONTAINERAPI_PATHS_CSARS + application.getId()
-				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT
-				+ "/" + relPath;
+				+ Constants.OPENTOSCACONTAIENRAPI_PATH_CONTENT + "/" + relPath;
 	}
 
 	// @hahnml: Replace the container host in an URL with the actual host name. In

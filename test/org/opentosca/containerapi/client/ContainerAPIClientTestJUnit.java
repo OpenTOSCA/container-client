@@ -30,6 +30,8 @@ import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfig
 import org.opentosca.containerapi.client.impl.OpenTOSCAContainerLegacyAPIClient;
 import org.opentosca.containerapi.client.impl.OpenTOSCAContainerInternalAPIClient;
 import org.opentosca.containerapi.client.model.Application;
+import org.opentosca.containerapi.client.model.NodeInstance;
+import org.opentosca.containerapi.client.model.RelationInstance;
 import org.opentosca.containerapi.client.model.ServiceInstance;
 import org.opentosca.containerapi.client.model.ServiceTemplate;
 
@@ -126,7 +128,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Rule
-	public TestName testName = new TestName();
+	public TestName testName = new TestName();	
 
 	@Before
 	public void before() {
@@ -256,6 +258,28 @@ public class ContainerAPIClientTestJUnit {
 	public void test7GetInstanceProperties() {
 		Map<String, String> instanceProperties = instance.getProperties();
 		System.out.println(instanceProperties);
+		
+		List<NodeInstance> nodeInstances = client.getNodeInstances(instance);
+		List<RelationInstance> relationInstances = client.getRelationInstances(instance);
+
+		// small and hacky test for nodeInstance operation invocation
+		for(NodeInstance nodeInstance : nodeInstances) {
+			if(nodeInstance.getNodeTemplateId().contains("Ubuntu")) {							
+				Map<String,String> params = new HashMap<String,String>();
+				
+				params.put("VMUserName", nodeInstance.getProperties().get("VMUserName"));
+				params.put("VMPrivateKey", nodeInstance.getProperties().get("VMPrivateKey"));
+				params.put("VMIP", nodeInstance.getProperties().get("VMIP"));
+				
+				this.client.invokeNodeInstanceOperation(nodeInstance, "OperatingSystemInterface", "waitForAvailability", params);
+			}
+		}
+		
+		assertNotNull(nodeInstances);
+		assertNotNull(relationInstances);
+
+		assertFalse(nodeInstances.isEmpty());
+		assertFalse(relationInstances.isEmpty());
 	}
 
 	@Test

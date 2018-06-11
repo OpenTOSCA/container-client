@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.management.RuntimeErrorException;
+import javax.swing.plaf.basic.BasicComboPopup.InvocationKeyHandler;
 import javax.ws.rs.core.MediaType;
 import javax.xml.namespace.QName;
 
@@ -333,7 +335,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 		for (String nodeTemplateUrl : nodeTemplateUrls) {
 			nodeInstances.addAll(
-					this.getNodeInstancesFromNodeTemplateUrl(serviceInstance.getApplicationId(), nodeTemplateUrl));
+					this.getNodeInstancesFromNodeTemplateUrl(String.valueOf(serviceInstance.getId()), nodeTemplateUrl));
 
 		}
 
@@ -605,6 +607,72 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public Map<String, String> invokeNodeInstanceOperation(NodeInstance nodeInstance, String interfaceName,
+			String operationName, Map<String, String> params) {
+		ServiceInstance servInstance = this.getServiceInstance(Long.valueOf(nodeInstance.getServiceInstance()));
+		Application appl = this.getApplication(servInstance.getApplicationId());
+
+		JSONObject reqJsonObj = new JSONObject();
+		JSONObject invocInfJsonObj = new JSONObject();
+		JSONObject paramsJsonObj = new JSONObject();
+
+		invocInfJsonObj.put("csarID", appl.getId());
+		invocInfJsonObj.put("serviceTemplateID", this.getServiceTemplate(servInstance).getId().toString());
+		invocInfJsonObj.put("serviceInstanceID", this.containerUrl + servInstance.getServiceInstanceUrl().toString());
+		invocInfJsonObj.put("nodeTemplateID", nodeInstance.getNodeTemplateId());
+		invocInfJsonObj.put("interface", interfaceName);
+		invocInfJsonObj.put("operation", operationName);
+
+		for (String key : params.keySet()) {
+			paramsJsonObj.put(key, params.get(key));
+		}
+
+		reqJsonObj.put("invocation-information", invocInfJsonObj);
+		reqJsonObj.put("params", params);
+
+		String managementBusUrl = "http://" + this.containerHost + ":8086/ManagementBus/v1/invoker";
+
+		WebResource webRes = this.createWebResource(managementBusUrl);		
+		ClientResponse resp = webRes.post(ClientResponse.class, reqJsonObj.toString());
+
+		if (resp.getStatus() != 202) {
+			throw new RuntimeException("Couldn't call operation " + interfaceName + "#" + operationName
+					+ " on NodeInstance " + nodeInstance.getId());
+		}
+
+		String taskResourceUrl = resp.getHeaders().get("Location").get(0);		
+		WebResource taskResource = this.createWebResource(taskResourceUrl);		
+		ClientResponse taskResourceResponse = taskResource.get(ClientResponse.class);
+		
+		if(taskResourceResponse.getStatus() != 200) {
+			throw new RuntimeException("Couldn't call operation result of " + interfaceName + "#" + operationName
+					+ " on NodeInstance " + nodeInstance.getId());
+		}
+		
+		String jsonString = taskResourceResponse.getEntity(String.class);		
+		JSONObject respJsonObj = new JSONObject(jsonString);
+		
+		while(respJsonObj.has("status") && respJsonObj.get("status").equals("PENDING")) {
+			taskResourceResponse = taskResource.get(ClientResponse.class);
+			jsonString = taskResourceResponse.getEntity(String.class);
+			respJsonObj = new JSONObject(jsonString);
+		}
+		
+		JSONObject jsonObjResult = respJsonObj.getJSONObject("response");		
+		Map<String, String> result = new HashMap<String,String>();
+		
+		for(String key : JSONObject.getNames(jsonObjResult)) {
+			if(key.equals("MessageID")) {
+				continue;
+			} else {
+				result.put(key, jsonObjResult.getString(key));
+			}
+		}
+		
+		return result;
 	}
 
 }

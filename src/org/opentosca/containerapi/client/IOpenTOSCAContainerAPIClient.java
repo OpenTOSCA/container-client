@@ -94,11 +94,33 @@ public interface IOpenTOSCAContainerAPIClient {
 	boolean terminateServiceInstance(ServiceInstance instance);
 
 	/**
-	 * Invokes an operation defined in the interfaces of the boundary definition of
-	 * the given application.
+	 * Invokes an operation defined in the interfaces of Node Type of the given
+	 * NodeInstance.
 	 * 
-	 * @param application
-	 *            An {@link Application} to call its operation
+	 * 
+	 * @param nodeInstance
+	 *            A {@link NodeInstance} to call its operation
+	 * @param interfaceName
+	 *            The name of the interface the operation belongs to as
+	 *            {@link String}
+	 * @param operationName
+	 *            The name of the operation to call as {@link String}
+	 * @param params
+	 *            A {@link Map} of {@link String} to {@link String} containing a
+	 *            mapping of input parameters and values for the operation to call
+	 * 
+	 * @return A {@link Map} from {@link String} to {@link String} containing a
+	 *         mapping of output parameters and values of the called operation
+	 */
+	Map<String, String> invokeNodeInstanceOperation(NodeInstance nodeInstance, String interfaceName,
+			String operationName, Map<String, String> params);
+
+	/**
+	 * Invokes an operation defined in the interfaces of the boundary definition of
+	 * the given ServiceInstance.
+	 * 
+	 * @param serviceInstance
+	 *            An {@link ServiceInstance} to call its operation
 	 * @param interfaceName
 	 *            The name of the interface the operation belongs to as
 	 *            {@link String}
@@ -119,7 +141,8 @@ public interface IOpenTOSCAContainerAPIClient {
 	 * 
 	 * @param id
 	 *            the id of the ServiceInstance
-	 * @return a ServiceInstance, returns null if no matching ServiceInstance was found
+	 * @return a ServiceInstance, returns null if no matching ServiceInstance was
+	 *         found
 	 */
 	ServiceInstance getServiceInstance(Long id);
 

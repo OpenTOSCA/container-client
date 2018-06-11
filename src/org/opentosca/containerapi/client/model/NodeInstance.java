@@ -8,12 +8,14 @@ public class NodeInstance {
 	private final String id;
 	private final Map<String, String> properties;
 	private final String state;
+	private final String nodeTemplateId;
 
-	public NodeInstance(String serviceInstanceId, String id, Map<String, String> properties, String state) {
+	public NodeInstance(String serviceInstanceId, String id, Map<String, String> properties, String state, String nodeTemplateId) {
 		this.serviceInstance = serviceInstanceId;
 		this.id = id;
 		this.properties = properties;
 		this.state = state;
+		this.nodeTemplateId = nodeTemplateId;
 	}
 
 	public String getServiceInstance() {
@@ -32,5 +34,8 @@ public class NodeInstance {
 		return state;
 	}
 	
+	public String getNodeTemplateId() {
+		return this.nodeTemplateId;
+	}
 	
 }
