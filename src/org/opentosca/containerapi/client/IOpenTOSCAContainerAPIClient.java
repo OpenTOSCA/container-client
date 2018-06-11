@@ -115,6 +115,15 @@ public interface IOpenTOSCAContainerAPIClient {
 			String operationName, Map<String, String> params);
 
 	/**
+	 * Returns a ServiceInstance obj based on the given id
+	 * 
+	 * @param id
+	 *            the id of the ServiceInstance
+	 * @return a ServiceInstance, returns null if no matching ServiceInstance was found
+	 */
+	ServiceInstance getServiceInstance(Long id);
+
+	/**
 	 * Updates the given ServiceInstance object
 	 * 
 	 * @param serviceInstance
