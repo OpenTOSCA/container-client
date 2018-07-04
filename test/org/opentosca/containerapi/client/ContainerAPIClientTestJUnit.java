@@ -49,74 +49,84 @@ public class ContainerAPIClientTestJUnit {
 	public static List<TestRunConfiguration> parameters() {
 		List<TestRunConfiguration> params = new ArrayList<TestRunConfiguration>();
 
-		String testParams = null;
-		try {
-			testParams = FileUtils.readFileToString(new File("resources/testParams.json"), "UTF-8");
+		File resourcesRoot = new File("resources/");
 
-			if (testParams != null) {
-				JSONObject jTestParams = new JSONObject(testParams);
-				String testCsarPath = jTestParams.getString("csarPath");
-				String containerHost = jTestParams.getString("containerHost");
-				String containerHostInternal = jTestParams.optString("containerHostInternal", containerHost);
-				JSONArray csarsTests = jTestParams.getJSONArray("csarsTests");
+		File[] filesInResourcesRoot = resourcesRoot.listFiles();
 
-				for (int i = 0, size = csarsTests.length(); i < size; i++) {
+		for (File file : filesInResourcesRoot) {
 
-					JSONObject csarTestData = csarsTests.getJSONObject(i);
-					String testCsarName = csarTestData.getString("csarName");
+			if(!file.getName().endsWith("json")) {
+				continue;
+			}
+			
+			String testParams = null;
+			try {
+				testParams = FileUtils.readFileToString(file, "UTF-8");
 
-					JSONArray inputParams = csarTestData.getJSONArray("inputParams");
-					Map<String, String> testInputParams = new HashMap<String, String>();
-					for (int j = 0, sizej = inputParams.length(); j < sizej; j++) {
-						JSONObject input = inputParams.getJSONObject(j);
+				if (testParams != null) {
+					JSONObject jTestParams = new JSONObject(testParams);
+					String testCsarPath = jTestParams.getString("csarPath");
+					String containerHost = jTestParams.getString("containerHost");
+					String containerHostInternal = jTestParams.optString("containerHostInternal", containerHost);
+					JSONArray csarsTests = jTestParams.getJSONArray("csarsTests");
 
-						Iterator<String> it = input.keys();
-						while (it.hasNext()) {
-							String inputName = (String) it.next();
-							testInputParams.put(inputName, input.getString(inputName));
+					for (int i = 0, size = csarsTests.length(); i < size; i++) {
+
+						JSONObject csarTestData = csarsTests.getJSONObject(i);
+						String testCsarName = csarTestData.getString("csarName");
+
+						JSONArray inputParams = csarTestData.getJSONArray("inputParams");
+						Map<String, String> testInputParams = new HashMap<String, String>();
+						for (int j = 0, sizej = inputParams.length(); j < sizej; j++) {
+							JSONObject input = inputParams.getJSONObject(j);
+
+							Iterator<String> it = input.keys();
+							while (it.hasNext()) {
+								String inputName = (String) it.next();
+								testInputParams.put(inputName, input.getString(inputName));
+							}
 						}
-					}
 
-					if (csarTestData.has("instanceRun")) {
-						List<TestInstanceConfiguration> run = new ArrayList<TestInstanceConfiguration>();
-						JSONArray instanceRuns = csarTestData.getJSONArray("instanceRun");
-						for (int index = 0; index < instanceRuns.length(); index++) {
-							JSONObject instanceRunJsonObj = instanceRuns.getJSONObject(index);
-							String interfaceName = instanceRunJsonObj.getString("interfaceName");
-							String operationName = instanceRunJsonObj.getString("operationName");
-							JSONArray runInstanceInputParams = instanceRunJsonObj.getJSONArray("inputParams");
-							Map<String, String> runInstanceInputParamMap = new HashMap<String, String>();
-							for (int j = 0, sizej = runInstanceInputParams.length(); j < sizej; j++) {
-								JSONObject input = runInstanceInputParams.getJSONObject(j);
+						if (csarTestData.has("instanceRun")) {
+							List<TestInstanceConfiguration> run = new ArrayList<TestInstanceConfiguration>();
+							JSONArray instanceRuns = csarTestData.getJSONArray("instanceRun");
+							for (int index = 0; index < instanceRuns.length(); index++) {
+								JSONObject instanceRunJsonObj = instanceRuns.getJSONObject(index);
+								String interfaceName = instanceRunJsonObj.getString("interfaceName");
+								String operationName = instanceRunJsonObj.getString("operationName");
+								JSONArray runInstanceInputParams = instanceRunJsonObj.getJSONArray("inputParams");
+								Map<String, String> runInstanceInputParamMap = new HashMap<String, String>();
+								for (int j = 0, sizej = runInstanceInputParams.length(); j < sizej; j++) {
+									JSONObject input = runInstanceInputParams.getJSONObject(j);
 
-								Iterator<String> it = input.keys();
-								while (it.hasNext()) {
-									String inputName = (String) it.next();
-									runInstanceInputParamMap.put(inputName, input.getString(inputName));
+									Iterator<String> it = input.keys();
+									while (it.hasNext()) {
+										String inputName = (String) it.next();
+										runInstanceInputParamMap.put(inputName, input.getString(inputName));
+									}
 								}
+
+								run.add(new TestInstanceConfiguration(interfaceName, operationName,
+										runInstanceInputParamMap));
+
 							}
 
-							run.add(new TestInstanceConfiguration(interfaceName, operationName,
-									runInstanceInputParamMap));
-
+							params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
+									testCsarName, testInputParams, run));
+						} else {
+							params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
+									testCsarName, testInputParams));
 						}
-
-						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
-								testCsarName, testInputParams, run));
-					} else {
-						params.add(new TestRunConfiguration(testCsarPath, containerHost, containerHostInternal,
-								testCsarName, testInputParams));
 					}
-				}
 
+				}
+				System.out.println("Running tests with following configurations:");
+				for (TestRunConfiguration runParam : params) {
+					System.out.println(runParam);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			System.out.println("Running tests with following configurations:");
-			for (TestRunConfiguration runParam : params) {
-				System.out.println(runParam);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		return params;
 	}
@@ -128,7 +138,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Rule
-	public TestName testName = new TestName();	
+	public TestName testName = new TestName();
 
 	@Before
 	public void before() {
@@ -258,23 +268,24 @@ public class ContainerAPIClientTestJUnit {
 	public void test7GetInstanceProperties() {
 		Map<String, String> instanceProperties = instance.getProperties();
 		System.out.println(instanceProperties);
-		
+
 		List<NodeInstance> nodeInstances = client.getNodeInstances(instance);
 		List<RelationInstance> relationInstances = client.getRelationInstances(instance);
 
 		// small and hacky test for nodeInstance operation invocation
-		for(NodeInstance nodeInstance : nodeInstances) {
-			if(nodeInstance.getNodeTemplateId().contains("Ubuntu")) {							
-				Map<String,String> params = new HashMap<String,String>();
-				
+		for (NodeInstance nodeInstance : nodeInstances) {
+			if (nodeInstance.getNodeTemplateId().contains("Ubuntu")) {
+				Map<String, String> params = new HashMap<String, String>();
+
 				params.put("VMUserName", nodeInstance.getProperties().get("VMUserName"));
 				params.put("VMPrivateKey", nodeInstance.getProperties().get("VMPrivateKey"));
 				params.put("VMIP", nodeInstance.getProperties().get("VMIP"));
-				
-				this.client.invokeNodeInstanceOperation(nodeInstance, "OperatingSystemInterface", "waitForAvailability", params);
+
+				this.client.invokeNodeInstanceOperation(nodeInstance, "OperatingSystemInterface", "waitForAvailability",
+						params);
 			}
 		}
-		
+
 		assertNotNull(nodeInstances);
 		assertNotNull(relationInstances);
 
