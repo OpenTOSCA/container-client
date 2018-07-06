@@ -143,14 +143,14 @@ public class ContainerAPIClientTestJUnit {
 
 		// should always be one application and service instance for this test class
 		switch (testName.getMethodName().split("\\[")[0]) {
-		case "test5GetInputParameters":
-		case "test6CreateInstance":
-		case "test9DeleteApplication":
+		case "testDGetInputParameters":
+		case "testECreateInstance":
+		case "testJDeleteApplication":
 			this.application = client.getApplications().get(0);
 			break;
-		case "test7GetInstanceProperties":
-		case "test8TestInstanceRuns":
-		case "test999DeleteInstance":
+		case "testFGetInstanceProperties":
+		case "testGTestInstanceRuns":
+		case "testHDeleteInstance":
 			this.application = client.getApplications().get(0);
 			// just makes the the testing more robust
 			this.instance = this.getInstanceBasedOnHighestId(client.getServiceInstances(application));
@@ -170,7 +170,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test1DeployApplication() {
+	public void testADeployApplication() {
 		try {
 			String pathToCsar = runConfiguration.directoryPath + File.separator + runConfiguration.testCsarName;
 			Application deployedApplication = client.deployApplication(pathToCsar);
@@ -204,7 +204,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test2GetApplications() {
+	public void testBGetApplications() {
 		// Retrieve installed applications
 		try {
 			System.out.println(runConfiguration.testCsarName);
@@ -223,7 +223,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test4GetServiceTemplates() {
+	public void testCGetServiceTemplates() {
 		try {
 			System.out.println(runConfiguration.testCsarName);
 			List<Application> applications = client.getApplications();
@@ -245,7 +245,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test5GetInputParameters() {
+	public void testDGetInputParameters() {
 		try {
 			List<String> inputParams = application.getInputParameters();
 			System.out.println("input parameters: " + inputParams);
@@ -256,7 +256,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test6CreateInstance() {
+	public void testECreateInstance() {
 		try {
 			instance = client.createServiceInstance(application, runConfiguration.testInputParams);
 			assertNotNull(instance);
@@ -277,7 +277,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test7GetInstanceProperties() {
+	public void testFGetInstanceProperties() {
 		try {
 			Map<String, String> instanceProperties = instance.getProperties();
 			System.out.println(instanceProperties);
@@ -310,7 +310,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test8TestInstanceRuns() {
+	public void testGTestInstanceRuns() {
 		try {
 			if (runConfiguration.instanceRuns != null) {
 				for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
@@ -327,7 +327,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test999DeleteInstance() {
+	public void testHDeleteInstance() {
 		try {
 			boolean result = client.terminateServiceInstance(instance);
 			assertTrue(result);
@@ -337,7 +337,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test99GetApplication() {
+	public void testIGetApplication() {
 		try {
 			Application app = client.getApplication(runConfiguration.testCsarName);
 			assertNotNull(app);
@@ -350,7 +350,7 @@ public class ContainerAPIClientTestJUnit {
 	}
 
 	@Test
-	public void test9DeleteApplication() {
+	public void testJDeleteApplication() {
 		try {
 
 			// Delete application
