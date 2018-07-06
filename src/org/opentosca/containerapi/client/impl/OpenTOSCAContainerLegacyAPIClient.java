@@ -238,7 +238,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			return deployedAplication;
 
 		} else {
-			System.out.println("Upload not possible");
+			System.out.println("Upload not possible as the CSAR file at " + absPath + " couldn't be found");
 			return null;
 		}
 	}
