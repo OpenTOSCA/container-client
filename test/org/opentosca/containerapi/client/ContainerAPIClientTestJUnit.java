@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,7 +17,6 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,7 +26,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfiguration;
 import org.opentosca.containerapi.client.impl.OpenTOSCAContainerLegacyAPIClient;
-import org.opentosca.containerapi.client.impl.OpenTOSCAContainerInternalAPIClient;
 import org.opentosca.containerapi.client.model.Application;
 import org.opentosca.containerapi.client.model.NodeInstance;
 import org.opentosca.containerapi.client.model.RelationInstance;
@@ -55,10 +52,10 @@ public class ContainerAPIClientTestJUnit {
 
 		for (File file : filesInResourcesRoot) {
 
-			if(!file.getName().endsWith("json")) {
+			if (!file.getName().endsWith("json")) {
 				continue;
 			}
-			
+
 			String testParams = null;
 			try {
 				testParams = FileUtils.readFileToString(file, "UTF-8");
@@ -202,145 +199,181 @@ public class ContainerAPIClientTestJUnit {
 			application = deployedApplication;
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			org.junit.Assert.fail(e.getMessage());
 		}
 	}
 
 	@Test
 	public void test2GetApplications() {
 		// Retrieve installed applications
-		System.out.println(runConfiguration.testCsarName);
-		List<Application> applications = client.getApplications();
-		System.out.println("Installed Applications: " + applications.size());
+		try {
+			System.out.println(runConfiguration.testCsarName);
+			List<Application> applications = client.getApplications();
+			System.out.println("Installed Applications: " + applications.size());
 
-		for (Application app : applications) {
-			System.out.println("Application name: " + app.getId() + " Application instantiation input: "
-					+ app.getInputParameters());
-			System.out.println("Metadata: \n" + app.getMetadata());
+			for (Application app : applications) {
+				System.out.println("Application name: " + app.getId() + " Application instantiation input: "
+						+ app.getInputParameters());
+				System.out.println("Metadata: \n" + app.getMetadata());
+			}
+			assertEquals(1, applications.size());
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
 		}
-		assertEquals(1, applications.size());
 	}
 
 	@Test
 	public void test4GetServiceTemplates() {
-		System.out.println(runConfiguration.testCsarName);
-		List<Application> applications = client.getApplications();
-		System.out.println("Installed Applications: " + applications.size());
+		try {
+			System.out.println(runConfiguration.testCsarName);
+			List<Application> applications = client.getApplications();
+			System.out.println("Installed Applications: " + applications.size());
 
-		for (Application app : applications) {
+			for (Application app : applications) {
 
-			ServiceTemplate servTemplate = client.getServiceTemplate(app);
-			assertNotNull(servTemplate);
+				ServiceTemplate servTemplate = client.getServiceTemplate(app);
+				assertNotNull(servTemplate);
 
-			assertNotEquals(0, servTemplate.getNodeTemplates().size());
-			assertNotEquals(0, servTemplate.getRelationshipTemplates().size());
+				assertNotEquals(0, servTemplate.getNodeTemplates().size());
+				assertNotEquals(0, servTemplate.getRelationshipTemplates().size());
+			}
+
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
 		}
 
 	}
 
 	@Test
 	public void test5GetInputParameters() {
-
-		List<String> inputParams = application.getInputParameters();
-		System.out.println("input parameters: " + inputParams);
-		assertFalse(inputParams.isEmpty());
+		try {
+			List<String> inputParams = application.getInputParameters();
+			System.out.println("input parameters: " + inputParams);
+			assertFalse(inputParams.isEmpty());
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void test6CreateInstance() {
-		instance = client.createServiceInstance(application, runConfiguration.testInputParams);
-		assertNotNull(instance);
+		try {
+			instance = client.createServiceInstance(application, runConfiguration.testInputParams);
+			assertNotNull(instance);
 
-		float progress = instance.getCreationProgress();
-		System.out.println("Current Progress: " + progress * 100);
-		while (((int) progress) != 1) {
+			float progress = instance.getCreationProgress();
 			System.out.println("Current Progress: " + progress * 100);
-			instance = client.updateServiceInstance(instance);
-			progress = instance.getCreationProgress();
-		}
+			while (((int) progress) != 1) {
+				System.out.println("Current Progress: " + progress * 100);
+				instance = client.updateServiceInstance(instance);
+				progress = instance.getCreationProgress();
+			}
 
-		assertEquals(1, (int) instance.getCreationProgress());
-		System.out.println("output parameters: " + instance.getPlanOutputParameters());
+			assertEquals(1, (int) instance.getCreationProgress());
+			System.out.println("output parameters: " + instance.getPlanOutputParameters());
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void test7GetInstanceProperties() {
-		Map<String, String> instanceProperties = instance.getProperties();
-		System.out.println(instanceProperties);
+		try {
+			Map<String, String> instanceProperties = instance.getProperties();
+			System.out.println(instanceProperties);
 
-		List<NodeInstance> nodeInstances = client.getNodeInstances(instance);
-		List<RelationInstance> relationInstances = client.getRelationInstances(instance);
+			List<NodeInstance> nodeInstances = client.getNodeInstances(instance);
+			List<RelationInstance> relationInstances = client.getRelationInstances(instance);
 
-		// small and hacky test for nodeInstance operation invocation
-		for (NodeInstance nodeInstance : nodeInstances) {
-			if (nodeInstance.getNodeTemplateId().contains("Ubuntu")) {
-				Map<String, String> params = new HashMap<String, String>();
+			// small and hacky test for nodeInstance operation invocation
+			for (NodeInstance nodeInstance : nodeInstances) {
+				if (nodeInstance.getNodeTemplateId().contains("Ubuntu")) {
+					Map<String, String> params = new HashMap<String, String>();
 
-				params.put("VMUserName", nodeInstance.getProperties().get("VMUserName"));
-				params.put("VMPrivateKey", nodeInstance.getProperties().get("VMPrivateKey"));
-				params.put("VMIP", nodeInstance.getProperties().get("VMIP"));
+					params.put("VMUserName", nodeInstance.getProperties().get("VMUserName"));
+					params.put("VMPrivateKey", nodeInstance.getProperties().get("VMPrivateKey"));
+					params.put("VMIP", nodeInstance.getProperties().get("VMIP"));
 
-				this.client.invokeNodeInstanceOperation(nodeInstance, "OperatingSystemInterface", "waitForAvailability",
-						params);
+					this.client.invokeNodeInstanceOperation(nodeInstance, "OperatingSystemInterface",
+							"waitForAvailability", params);
+				}
 			}
+
+			assertNotNull(nodeInstances);
+			assertNotNull(relationInstances);
+
+			assertFalse(nodeInstances.isEmpty());
+			assertFalse(relationInstances.isEmpty());
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
 		}
-
-		assertNotNull(nodeInstances);
-		assertNotNull(relationInstances);
-
-		assertFalse(nodeInstances.isEmpty());
-		assertFalse(relationInstances.isEmpty());
 	}
 
 	@Test
 	public void test8TestInstanceRuns() {
-		if (runConfiguration.instanceRuns != null) {
-			for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
+		try {
+			if (runConfiguration.instanceRuns != null) {
+				for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
 
-				Map<String, String> output = this.client.invokeServiceInstanceOperation(instance,
-						instanceRun.interfaceName, instanceRun.operationName, instanceRun.inputParams);
+					Map<String, String> output = this.client.invokeServiceInstanceOperation(instance,
+							instanceRun.interfaceName, instanceRun.operationName, instanceRun.inputParams);
 
-				assertFalse(output.isEmpty());
+					assertFalse(output.isEmpty());
+				}
 			}
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
 		}
 	}
 
 	@Test
 	public void test999DeleteInstance() {
-		boolean result = client.terminateServiceInstance(instance);
-		assertTrue(result);
+		try {
+			boolean result = client.terminateServiceInstance(instance);
+			assertTrue(result);
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void test99GetApplication() {
-		Application app = client.getApplication(runConfiguration.testCsarName);
-		assertNotNull(app);
-		System.out.println(
-				"Application name: " + app.getId() + " Application instantiation input: " + app.getInputParameters());
-		System.out.println("Metadata: \n" + app.getMetadata());
+		try {
+			Application app = client.getApplication(runConfiguration.testCsarName);
+			assertNotNull(app);
+			System.out.println("Application name: " + app.getId() + " Application instantiation input: "
+					+ app.getInputParameters());
+			System.out.println("Metadata: \n" + app.getMetadata());
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void test9DeleteApplication() {
-		// Delete application
-		Application app = application;
+		try {
 
-		if (app == null) {
-			app = client.getApplications().get(0);
-		}
-		client.undeployApplication(app);
+			// Delete application
+			Application app = application;
 
-		// Retrieve installed applications and check if it was not deleted
-		List<Application> applications = client.getApplications();
-
-		boolean foundApp = false;
-		for (Application application : applications) {
-			if (application.getId().equals(application.getId())) {
-				foundApp = true;
-				break;
+			if (app == null) {
+				app = client.getApplications().get(0);
 			}
+			client.undeployApplication(app);
+
+			// Retrieve installed applications and check if it was not deleted
+			List<Application> applications = client.getApplications();
+
+			boolean foundApp = false;
+			for (Application application : applications) {
+				if (application.getId().equals(application.getId())) {
+					foundApp = true;
+					break;
+				}
+			}
+			assertFalse(foundApp);
+		} catch (Exception e) {
+			org.junit.Assert.fail(e.getMessage());
 		}
-		assertFalse(foundApp);
 	}
 }
