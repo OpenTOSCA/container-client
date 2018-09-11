@@ -131,14 +131,6 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getDescription(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURE_JSON_DESCRIPTION)) {
-			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURE_JSON_DESCRIPTION);
-		} else {
-			return null;
-		}
-	}
-
-	String getDisplayName(JSONObject appProps) {
 		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION)) {
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION);
 		} else {
@@ -146,9 +138,17 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		}
 	}
 
+	String getDisplayName(JSONObject appProps) {
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME)) {
+			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME);
+		} else {
+			return null;
+		}
+	}
+
 	String getDisplayName(final String csarName) {
 		return this.getApplicationProperties(csarName)
-				.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION);
+				.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME);
 	}
 
 	Map<String, String> getInstanceProperties(String legacyInstanceUrl)

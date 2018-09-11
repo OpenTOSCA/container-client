@@ -21,9 +21,9 @@ public class Constants {
 	public final static String OPENTOSCACONTAIENRAPI_PATH_SERVICETEMPLATES = "/ServiceTemplates";
 	public final static String OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF = "Self";
 	public final static String OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF_LOWER = "self";
-	public final static String OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION = "displayName";
+	public final static String OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME = "display_name";
 	public final static String OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION = "version";
-	public final static String OPENTOSCACONTAINERAPI_APPLICATIONRESOURE_JSON_DESCRIPTION = "description";
+	public final static String OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION = "description";
 	public final static String OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAM = "InputParameter";
 	public final static String OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_INPUTPARAMS = "InputParameters";
 	public final static String OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_NAME = "Name";
@@ -49,14 +49,13 @@ public class Constants {
 	public final static String OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES = "service_templates";
 	public final static String OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA = "content/SELFSERVICE-Metadata";
 	public final static String OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON = "content/SELFSERVICE-Metadata/smartservice.json";
-	
+
 	public final static String OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS = "/boundarydefinitions";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_PROPERTIES = "/properties";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_CONTENT = "/content";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_CONTENT_DEFINITIONS = "/Definitions";
-	
+
 	public final static String OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFOLDER = "/TOSCA-Metadata";
 	public final static String OPENTOSCACONTAINERAPI_PATH_TOSCAMETADATAFILENAME = "/TOSCA.meta";
-	
 
 }
