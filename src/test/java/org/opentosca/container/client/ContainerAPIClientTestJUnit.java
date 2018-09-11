@@ -1,4 +1,4 @@
-package org.opentosca.containerapi.client;
+package org.opentosca.container.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,7 +18,6 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,18 +25,16 @@ import org.junit.rules.TestName;
 import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
-import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfiguration;
-import org.opentosca.containerapi.client.impl.ContainerAPIClientImpl;
-import org.opentosca.containerapi.client.model.Application;
-import org.opentosca.containerapi.client.model.ServiceInstance;
-import org.opentosca.containerapi.client.model.ServiceTemplate;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.ServiceInstance;
+import org.opentosca.container.client.model.ServiceTemplate;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class ContainerAPIClientTestJUnit {
 
 	private final TestRunConfiguration runConfiguration; // updated for each csar
-	private final IContainerAPIClient client;
+	private final ContainerClient client;
 
 	private ServiceInstance instance;
 	private Application application;
@@ -75,7 +72,7 @@ public class ContainerAPIClientTestJUnit {
 					}
 
 					if (csarTestData.has("instanceRun")) {
-						List<TestInstanceConfiguration> run = new ArrayList<TestInstanceConfiguration>();
+						List<TestRunConfiguration.TestInstanceConfiguration> run = new ArrayList<TestRunConfiguration.TestInstanceConfiguration>();
 						JSONArray instanceRuns = csarTestData.getJSONArray("instanceRun");
 						for (int index = 0; index < instanceRuns.length(); index++) {
 							JSONObject instanceRunJsonObj = instanceRuns.getJSONObject(index);
@@ -93,7 +90,7 @@ public class ContainerAPIClientTestJUnit {
 								}
 							}
 
-							run.add(new TestInstanceConfiguration(interfaceName, operationName,
+							run.add(new TestRunConfiguration.TestInstanceConfiguration(interfaceName, operationName,
 									runInstanceInputParamMap));
 
 						}
@@ -120,7 +117,7 @@ public class ContainerAPIClientTestJUnit {
 
 	public ContainerAPIClientTestJUnit(TestRunConfiguration params) {
 		runConfiguration = params;
-		client = new ContainerAPIClientImpl(runConfiguration.containerHost);
+		client = new SwaggerContainerClient(runConfiguration.containerHost);
 	}
 
 	@Rule
@@ -249,7 +246,7 @@ public class ContainerAPIClientTestJUnit {
 	@Test
 	public void test8TestInstanceRuns() {
 		if (runConfiguration.instanceRuns != null) {
-			for (TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
+			for (TestRunConfiguration.TestInstanceConfiguration instanceRun : runConfiguration.instanceRuns) {
 
 				Map<String, String> output = this.client.invokeServiceInstanceOperation(instance,
 						instanceRun.interfaceName, instanceRun.operationName, instanceRun.inputParams);

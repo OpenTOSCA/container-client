@@ -1,4 +1,4 @@
-package org.opentosca.containerapi.client.model;
+package org.opentosca.container.client.model;
 
 import java.util.Map;
 import java.util.concurrent.FutureTask;

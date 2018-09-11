@@ -1,4 +1,4 @@
-package org.opentosca.containerapi.client.impl;
+package org.opentosca.container.client;
 
 public class Constants {
 

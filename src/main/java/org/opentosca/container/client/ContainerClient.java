@@ -1,16 +1,22 @@
-package org.opentosca.containerapi.client;
+package org.opentosca.container.client;
 
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONObject;
-import org.opentosca.containerapi.client.model.Application;
-import org.opentosca.containerapi.client.model.NodeInstance;
-import org.opentosca.containerapi.client.model.RelationInstance;
-import org.opentosca.containerapi.client.model.ServiceInstance;
-import org.opentosca.containerapi.client.model.ServiceTemplate;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.NodeInstance;
+import org.opentosca.container.client.model.RelationInstance;
+import org.opentosca.container.client.model.ServiceInstance;
+import org.opentosca.container.client.model.ServiceTemplate;
 
-public interface IContainerAPIClient {
+public interface ContainerClient {
+
+
+
+
+
+
+
 
 	String getContainerAPIUrl();
 
@@ -20,6 +26,9 @@ public interface IContainerAPIClient {
 	 * @return
 	 */
 	List<Application> getApplications();
+
+
+//
 
 	/**
 	 * retrieves an Application by its CSAR name

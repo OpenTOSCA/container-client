@@ -1,16 +1,15 @@
-package org.opentosca.containerapi.client;
+package org.opentosca.container.client;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.json.JSONObject;
-import org.opentosca.containerapi.client.model.Application;
-import org.opentosca.containerapi.client.model.NodeInstance;
-import org.opentosca.containerapi.client.model.RelationInstance;
-import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.NodeInstance;
+import org.opentosca.container.client.model.RelationInstance;
+import org.opentosca.container.client.model.ServiceInstance;
 
-public interface IContainerAPIAsyncClient {
+public interface ContainerClientAsync {
 
 	String getLegacyContainerAPIUrl();
 

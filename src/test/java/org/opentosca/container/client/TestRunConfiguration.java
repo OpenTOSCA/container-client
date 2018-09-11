@@ -1,9 +1,7 @@
-package org.opentosca.containerapi.client;
+package org.opentosca.container.client;
 
 import java.util.List;
 import java.util.Map;
-
-import org.opentosca.containerapi.client.TestRunConfiguration.TestInstanceConfiguration;
 
 public class TestRunConfiguration {
 
