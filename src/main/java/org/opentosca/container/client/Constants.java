@@ -10,6 +10,8 @@ public class Constants {
 	public final static String OPENTOSCACONTAINERAPI_PATH_LEGACYAPIROOT = "/containerapi";
 	public final static String OPENTOSCACONTAINERAPI_PATH_PROPERTIES = "/Properties";
 	public final static String OPENTOSCACONTAINERAPI_PATH_STATE = "/State";
+	public final static String OPENTOSCACONTAINERAPI_PATH_LOGS = "/Logs";
+	public final static String OPENTOSCACONTAINERAPI_PATH_PLANINSTANCES = "/PlanInstances";
 	public final static String OPENTOSCACONTAINERAPI_PLAN_STATE = "PLANS_DEPLOYED";
 	public final static String OPENTOSCACONTAINERAPI_RESOURCE_XML_PROPERTIES = "Properties";
 	public final static String OPENTOSCACONTAINERAPI_SERVICEINSTANCERESOURCE_JSON_STATE = "state";
