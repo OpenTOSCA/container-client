@@ -1,278 +1,251 @@
 package org.opentosca.container.client;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import org.opentosca.api.rest.client.api.DefaultApi;
-import org.opentosca.api.rest.client.invoker.ApiClient;
-import org.opentosca.api.rest.client.invoker.ApiException;
-import org.opentosca.api.rest.client.model.CsarDTO;
-import org.opentosca.api.rest.client.model.InterfaceDTO;
-import org.opentosca.api.rest.client.model.PlanDTO;
-import org.opentosca.api.rest.client.model.ServiceTemplateDTO;
-import org.opentosca.api.rest.client.model.ServiceTemplateInstanceDTO;
-import org.opentosca.api.rest.client.model.TParameter;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import io.swagger.client.api.DefaultApi;
+import io.swagger.client.model.CsarDTO;
+import io.swagger.client.model.InterfaceDTO;
+import io.swagger.client.model.PlanDTO;
+import io.swagger.client.model.ServiceTemplateDTO;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.model.Application;
-import org.opentosca.container.client.model.ModelUtils;
-import org.opentosca.container.client.model.NodeInstance;
-import org.opentosca.container.client.model.RelationInstance;
-import org.opentosca.container.client.model.ServiceInstance;
-import org.opentosca.container.client.model.ServiceTemplate;
+import org.opentosca.container.client.model.ApplicationInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class SwaggerContainerClient implements ContainerClient {
+public class SwaggerContainerClient implements ContainerClient, ContainerClientAsync {
 
-    private ApiClient clientConfig;
-    private DefaultApi client;
+    private static final Logger logger = LoggerFactory.getLogger(SwaggerContainerClient.class);
 
-    public SwaggerContainerClient(final String host) {
-        this.clientConfig = new ApiClient();
-        this.clientConfig.setBasePath(host);
-        this.client = new DefaultApi(this.clientConfig);
+    private final DefaultApi client = new DefaultApi();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    public SwaggerContainerClient(final String basePath, int timeout) {
+        this.client.getApiClient().setBasePath(basePath);
+        this.client.getApiClient().setReadTimeout(timeout);
+        this.client.getApiClient().setConnectTimeout(timeout);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getContainerAPIUrl()
-     */
+    // === Async
+
     @Override
-    public String getContainerAPIUrl() {
-        return this.clientConfig.getBasePath();
+    public CompletableFuture<List<Application>> getApplicationsAsync() {
+        CompletableFuture<List<Application>> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            List<Application> applications = new ArrayList<>();
+            try {
+                for (CsarDTO csar : this.client.getCsars().getCsars()) {
+                    applications.add(getApplication(csar.getId()));
+                }
+                future.complete(applications);
+            } catch (Exception e) {
+                logger.error("Error executing request: {}", e.getMessage(), e);
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getApplications()
-     */
+    @Override
+    public CompletableFuture<Application> getApplicationAsync(String id) {
+        CompletableFuture<Application> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                CsarDTO csar = this.client.getCsar(id);
+                ServiceTemplateDTO serviceTemplate = this.client.getServiceTemplates(id).getServiceTemplates().get(0);
+                List<InterfaceDTO> interfaces = this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId())).getInterfaces();
+                PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
+                future.complete(Application.builder()
+                        .csar(csar)
+                        .serviceTemplate(serviceTemplate)
+                        .buildPlan(buildPlan)
+                        .interfaces(interfaces)
+                        .build());
+            } catch (Exception e) {
+                logger.error("Error executing request: {}", e.getMessage(), e);
+                future.complete(null);
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Application> uploadApplicationAsync(Path path) {
+        CompletableFuture<Application> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                File file = path.toFile();
+
+                if (!file.exists()) {
+                    throw new FileNotFoundException("File does not exist");
+                }
+
+                Client httpClient = this.client.getApiClient().getHttpClient();
+                FormDataMultiPart formData = new FormDataMultiPart();
+                formData.bodyPart(new FileDataBodyPart("file", file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+                Response response = httpClient
+                        .target(this.client.getApiClient().getBasePath() + "/csars")
+                        .request()
+                        .post(Entity.entity(formData, formData.getMediaType()));
+
+                int status = response.getStatus();
+                if (status >= 200 && status < 400) {
+                    future.complete(getApplication(file.getName()));
+                } else {
+                    logger.error("HTTP error {} while uploading file", status);
+                    future.completeExceptionally(new RuntimeException("Failed to upload file: " + file.getAbsolutePath()));
+                }
+            } catch (Exception e) {
+                logger.error("Error executing request: {}", e.getMessage(), e);
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeApplicationAsync(Application application) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                this.client.deleteCsar(application.getId());
+                future.complete(true);
+            } catch (Exception e) {
+                logger.error("Error executing request: {}", e.getMessage(), e);
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<ApplicationInstance> provisionApplicationAsync(Application application, Map<String, String> inputParameters) {
+        CompletableFuture<ApplicationInstance> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                // TODO: Wait for plan to be completed
+                // TODO this.client.invokeBuildPlan(application.getBuildPlan().getId(), null, application.getId(), application.getServiceTemplate().getId());
+            } catch (Exception e) {
+                logger.error("Error executing request: {}", e.getMessage(), e);
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<List<ApplicationInstance>> getApplicationInstancesAsync(Application application) {
+        CompletableFuture<List<ApplicationInstance>> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            // TODO
+            future.completeExceptionally(new UnsupportedOperationException());
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> terminateApplicationAsync(ApplicationInstance instance) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            // TODO
+            future.completeExceptionally(new UnsupportedOperationException());
+        });
+        return future;
+    }
+
+    // === Sync
+
     @Override
     public List<Application> getApplications() {
-        List<Application> apps = new ArrayList<Application>();
         try {
-            for (CsarDTO csar : this.client.getCsars()) {
-                // there MUST only be one serviceTemplate and buildPlan
-                ServiceTemplateDTO servTemp = this.client.getServiceTemplates(csar.getId()).get(0);
-                List<InterfaceDTO> ifaces = this.client.getInterfaces(csar.getId(), servTemp.getId());
-                List<ServiceTemplateInstanceDTO> servInstances = this.client.getServiceTemplateInstances(csar.getId(),
-                        servTemp.getId());
-                PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), servTemp.getId()).get(0);
-                List<TParameter> inputParams = buildPlan.getInputParameters();
-
-                // TODO METADATA FETCH IS MISSING!!!!!
-
-                apps.add(ModelUtils.transform(csar, inputParams, servInstances, ifaces, ""));
-            }
-        } catch (ApiException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return getApplicationsAsync().get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
         }
-        return apps;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#getApplication
-     * (java.lang.String)
-     */
     @Override
-    public Application getApplication(String csarName) {
-        Application app = null;
+    public Application getApplication(String id) {
         try {
-            CsarDTO csar = this.client.getCsar(csarName);
-            ServiceTemplateDTO servTemp = this.client.getServiceTemplates(csar.getId()).get(0);
-            List<InterfaceDTO> ifaces = this.client.getInterfaces(csar.getId(), servTemp.getId());
-            List<ServiceTemplateInstanceDTO> servInstances = this.client.getServiceTemplateInstances(csar.getId(),
-                    servTemp.getId());
-            PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), servTemp.getId()).get(0);
-            List<TParameter> inputParams = buildPlan.getInputParameters();
-
-            // TODO METADATA FETCH IS MISSING!!!!!
-
-            app = ModelUtils.transform(csar, inputParams, servInstances, ifaces, "");
-        } catch (ApiException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return getApplicationAsync(id).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
         }
-
-        return app;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * deployApplication(java.lang.String)
-     */
     @Override
-    public Application deployApplication(String filePath) throws Exception {
-
-//		File file = new File(filePath);
-//
-//
-//		FormDataContentDisposition contentDisposition = new FormDataContentDisposition();
-//		contentDisposition.setFileName(file.getName());
-//		contentDisposition.setCreationDate();
-//		contentDisposition.setModificationDate(file.lastModified());
-//
-//
-//		this.client.uploadFile(null, file);
-
-        // TODO Auto-generated method stub
-        return null;
+    public Application uploadApplication(Path path) {
+        try {
+            return uploadApplicationAsync(path).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * undeployApplication(org.opentosca.containerapi.client.model.Application)
-     */
     @Override
-    public String undeployApplication(Application application) {
-        // TODO Auto-generated method stub
-        return null;
+    public boolean removeApplication(Application application) {
+        try {
+            return removeApplicationAsync(application).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getServiceTemplate(org.opentosca.containerapi.client.model.Application)
-     */
     @Override
-    public ServiceTemplate getServiceTemplate(Application application) {
-        // TODO Auto-generated method stub
-        return null;
+    public ApplicationInstance provisionApplication(Application application, Map<String, String> inputParameters) {
+        try {
+            return provisionApplicationAsync(application, inputParameters).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getServiceTemplate(org.opentosca.containerapi.client.model.ServiceInstance)
-     */
     @Override
-    public ServiceTemplate getServiceTemplate(ServiceInstance serviceInstance) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<ApplicationInstance> getApplicationInstances(Application application) {
+        try {
+            return getApplicationInstancesAsync(application).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * createServiceInstance(org.opentosca.containerapi.client.model.Application,
-     * java.util.Map)
-     */
     @Override
-    public ServiceInstance createServiceInstance(Application application, Map<String, String> params) {
-        // TODO Auto-generated method stub
-        return null;
+    public boolean terminateApplication(ApplicationInstance instance) {
+        try {
+            return terminateApplicationAsync(instance).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getServiceInstances(org.opentosca.containerapi.client.model.Application)
-     */
-    @Override
-    public List<ServiceInstance> getServiceInstances(Application application) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * terminateServiceInstance(org.opentosca.containerapi.client.model.
-     * ServiceInstance)
-     */
-    @Override
-    public boolean terminateServiceInstance(ServiceInstance instance) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * invokeServiceInstanceOperation(org.opentosca.containerapi.client.model.
-     * ServiceInstance, java.lang.String, java.lang.String, java.util.Map)
-     */
-    @Override
-    public Map<String, String> invokeServiceInstanceOperation(ServiceInstance serviceInstance, String interfaceName,
-                                                              String operationName, Map<String, String> params) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * updateServiceInstance(org.opentosca.containerapi.client.model.
-     * ServiceInstance)
-     */
-    @Override
-    public ServiceInstance updateServiceInstance(ServiceInstance serviceInstance) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * updateNodeInstance(org.opentosca.containerapi.client.model.NodeInstance)
-     */
-    @Override
-    public NodeInstance updateNodeInstance(NodeInstance nodeInstance) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * updateRelationInstance(org.opentosca.containerapi.client.model.
-     * RelationInstance)
-     */
-    @Override
-    public RelationInstance updateRelationInstance(RelationInstance relationInstance) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getNodeInstances(org.opentosca.containerapi.client.model.ServiceInstance)
-     */
-    @Override
-    public List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient#
-     * getRelationInstances(org.opentosca.containerapi.client.model.ServiceInstance)
-     */
-    @Override
-    public List<RelationInstance> getRelationInstances(ServiceInstance serviceInstance) {
-        // TODO Auto-generated method stub
-        return null;
+    private String encodeValue(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

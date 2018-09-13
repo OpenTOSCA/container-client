@@ -15,7 +15,7 @@ public class Constants {
 	public final static String OPENTOSCACONTAINERAPI_SERVICEINSTANCERESOURCE_JSON_STATE = "state";
 	public final static String[] OPENTOSCACONTAINERAPI_MANAGEMENT_PARAMETERS = { "instanceDataAPIUrl", "csarEntrypoint", "planCallbackAddress_invoker",
 			"CorrelationID" };
-	public final static String TERMINATE_PLAN_PATH = "/BoundaryDefinitions/Interfaces/OpenTOSCA-Lifecycle-Interface/Operations/terminate/Plan";
+	public final static String TERMINATE_PLAN_PATH = "/BoundaryDefinitions/Interfaces/OpenTOSCA-Lifecycle-Interface/Operations/terminateApplication/Plan";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_SERVICETEMPLATES = "/ServiceTemplates";
 	public final static String OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF = "Self";
 	public final static String OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF_LOWER = "self";

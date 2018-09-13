@@ -1,72 +1,73 @@
 package org.opentosca.container.client.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * 
- * @author francoaa
- *
- */
+import io.swagger.client.model.CsarDTO;
+import io.swagger.client.model.InterfaceDTO;
+import io.swagger.client.model.PlanDTO;
+import io.swagger.client.model.ServiceTemplateDTO;
+import io.swagger.client.model.TParameter;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
+
+@Builder
+@RequiredArgsConstructor
 public class Application {
 
-	private final String id;
-	private final List<String> inputParameters;
-	private final List<String> serviceInstancIds;
-	private final String displayName;
-	private final String version;
-	private final String description;
-	private final String author;
-	private final List<Interface> interfaces;
-	private final String metadata;
+    private final CsarDTO csar;
 
-	public Application(String id, List<String> inputParameters, List<String> serviceInstanceIds, String displayName,
-			String version, String description, String author, List<Interface> interfaces, String metadata) {
-		this.id = id;
-		this.inputParameters = inputParameters;
-		this.serviceInstancIds = serviceInstanceIds;
-		this.displayName = displayName;
-		this.version = version;
-		this.description = description;
-		this.author = author;
-		this.interfaces = interfaces;
-		this.metadata = metadata;
-	}
+    private final ServiceTemplateDTO serviceTemplate;
 
-	public String getId() {
-		return id;
-	}
-	
+    private final PlanDTO buildPlan;
 
-	public List<String> getInputParameters() {
-		return inputParameters;
-	}
+    private final List<InterfaceDTO> interfaces;
 
-	public List<String> getServiceInstanceIds() {
-		return this.serviceInstancIds;
-	}
+    public String getId() {
+        return csar.getId();
+    }
 
-	public String getDisplayName() {
-		return this.displayName;
-	}
+    public String getName() {
+        return csar.getName();
+    }
 
-	public String getVersion() {
-		return this.version;
-	}
+    public ServiceTemplate getServiceTemplate() {
+        return new ServiceTemplate(serviceTemplate);
+    }
 
-	public String getDescription() {
-		return this.description;
-	}
+    public Plan getBuildPlan() {
+        return new Plan(buildPlan);
+    }
 
-	public String getAuthor() {
-		return this.author;
-	}
-	
-	public List<Interface> getInterfaces(){
-		return this.interfaces;
-	}
+    @RequiredArgsConstructor
+    public static class ServiceTemplate {
 
-	public String getMetadata() { //JSONObject
-		return this.metadata;
-	}
-	
+        private final ServiceTemplateDTO serviceTemplate;
+
+        public String getId() {
+            return serviceTemplate.getId();
+        }
+
+        public String getName() {
+            return serviceTemplate.getName();
+        }
+    }
+
+    @RequiredArgsConstructor
+    public static class Plan {
+
+        private final PlanDTO plan;
+
+        public String getId() {
+            return plan.getId();
+        }
+
+        public String getName() {
+            return plan.getName();
+        }
+
+        public List<String> getInputParameters() {
+            return plan.getInputParameters().stream().map(TParameter::getName).collect(Collectors.toList());
+        }
+    }
 }

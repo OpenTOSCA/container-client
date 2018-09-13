@@ -1,111 +1,26 @@
 package org.opentosca.container.client;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import org.opentosca.container.client.model.Application;
-import org.opentosca.container.client.model.NodeInstance;
-import org.opentosca.container.client.model.RelationInstance;
-import org.opentosca.container.client.model.ServiceInstance;
+import org.opentosca.container.client.model.ApplicationInstance;
 
 public interface ContainerClientAsync {
 
-	String getLegacyContainerAPIUrl();
+    CompletableFuture<List<Application>> getApplicationsAsync();
 
-	void setLegacyContainerAPIUrl(String containerAPIUrl);
+    CompletableFuture<Application> getApplicationAsync(String id);
 
-	/**
-	 * gets a list of installed applications
-	 * 
-	 * @return
-	 */
-	Future<List<Application>> getApplications();
+    CompletableFuture<Application> uploadApplicationAsync(Path path);
 
-	/**
-	 * 
-	 * deploys an Application (CSAR file) onto the OpenTosca ecosystem
-	 * 
-	 * @param filePath
-	 * @return Application object or null if upload failed
-	 * @throws Exception
-	 */
-	Future<Application> deployApplication(String filePath) throws Exception;
+    CompletableFuture<Boolean> removeApplicationAsync(Application application);
 
-	/**
-	 * deletes an Application (CSAR file) onto the OpenTosca ecosystem
-	 * 
-	 * @param csarName
-	 *            application name
-	 * @return
-	 */
-	Future<String> undeployApplication(Application application);
+    CompletableFuture<ApplicationInstance> provisionApplicationAsync(Application application, Map<String, String> inputParameters);
 
-	/**
-	 * creates an instance of the application
-	 * 
-	 * @param application
-	 * @param params
-	 *            required parameters to provision the application
-	 * @return an Instance object
-	 */
-	Future<ServiceInstance> createServiceInstance(Application application, Map<String, String> params);
+    CompletableFuture<Boolean> terminateApplicationAsync(ApplicationInstance instance);
 
-	/**
-	 * terminates the given instance
-	 * 
-	 * @param instance
-	 * @return
-	 */
-	Future<Boolean> terminateServiceInstance(ServiceInstance instance);
-
-	/**
-	 * Updates the given ServiceInstance object
-	 * 
-	 * @param serviceInstance
-	 *            a ServiceInstance available at the configured OpenTOSCA
-	 *            container
-	 * @return a ServiceInstance
-	 */
-	Future<ServiceInstance> updateServiceInstance(ServiceInstance serviceInstance);
-	
-	
-	/**
-	 * Updates the given Node Instance object
-	 * 
-	 * @param nodeInstance
-	 *            a Node Instance available at the configured OpenTOSCA
-	 *            container
-	 * @return a Node Instance
-	 */
-	Future<NodeInstance> updateNodeInstance(NodeInstance nodeInstance);
-	
-	/**
-	 * Updates the given Relation Instance object
-	 * 
-	 * @param relationInstance
-	 *            a Relation Instance available at the configured OpenTOSCA
-	 *            container
-	 * @return a Relation Instance
-	 */
-	Future<RelationInstance> updateRelationInstance(RelationInstance relationInstance);
-	
-	/**
-	 * Returns a list of all node instances of the given service instance
-	 * 
-	 * @param serviceInstance
-	 *            an available service instance
-	 * @return a list of node instances
-	 */
-	Future<List<NodeInstance>> getNodeInstances(ServiceInstance serviceInstance);
-	
-	/**
-	 * Returns a list of all relation instances of the given service instance
-	 * 
-	 * @param serviceInstance
-	 *            an available service instance
-	 * @return a list of relation instances
-	 */
-	Future<List<RelationInstance>> getRelationInstances(ServiceInstance serviceInstance);
-
+    CompletableFuture<List<ApplicationInstance>> getApplicationInstancesAsync(Application application);
 }
