@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -22,6 +23,7 @@ import io.swagger.client.model.CsarDTO;
 import io.swagger.client.model.InterfaceDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.ServiceTemplateDTO;
+import io.swagger.client.model.TParameter;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.model.Application;
@@ -79,7 +81,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                         .build());
             } catch (Exception e) {
                 logger.error("Error executing request: {}", e.getMessage(), e);
-                future.complete(null);
+                future.completeExceptionally(e);
             }
         });
         return future;
@@ -139,8 +141,22 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         CompletableFuture<ApplicationInstance> future = new CompletableFuture<>();
         executor.submit(() -> {
             try {
+                String appId = application.getId();
+                String planId = encodeValue(application.getBuildPlan().getId());
+                String templateId = encodeValue(application.getServiceTemplate().getId());
+                List<TParameter> parameters = inputParameters.entrySet().stream().map(e -> {
+                    TParameter p = new TParameter();
+                    p.setName(e.getKey());
+                    p.setValue(e.getValue());
+                    p.setRequired(TParameter.RequiredEnum.YES);
+                    p.setType("String");
+                    return p;
+                }).collect(Collectors.toList());
+
+                String correlationId = this.client.invokeBuildPlan(planId, parameters, appId, templateId);
+
                 // TODO: Wait for plan to be completed
-                // TODO this.client.invokeBuildPlan(application.getBuildPlan().getId(), null, application.getId(), application.getServiceTemplate().getId());
+                // PlanInstanceDTO planInstance = this.client.getBuildPlanInstance(planId, correlationId, appId, templateId);
             } catch (Exception e) {
                 logger.error("Error executing request: {}", e.getMessage(), e);
                 future.completeExceptionally(e);

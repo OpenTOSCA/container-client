@@ -11,10 +11,12 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.ApplicationInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -50,24 +52,49 @@ public class ContainerClientTests {
 
     @Test
     public void test_10_empty_responses() {
-        Assert.assertNull(client.getApplication("test"));
-        for (Application app : client.getApplications()) {
-            client.removeApplication(app);
+        try {
+            // There should be an exception
+            client.getApplication("test");
+            Assert.fail();
+        } catch (Exception e) {
+            // Go ahead
+        }
+        for (Application application : client.getApplications()) {
+            client.removeApplication(application);
         }
         Assert.assertEquals(0, client.getApplications().size());
     }
 
     @Test
-    public void test_20_upload_and_remove() {
+    public void test_20_upload() {
         for (Config.Test test : config.getTests()) {
-            Assert.assertNull(client.getApplication(test.getName()));
+            // Assert.assertNull(client.getApplication(test.getName()));
             Path path = Paths.get(config.getPath(), test.getName());
             Application application = client.uploadApplication(path);
             Assert.assertEquals(test.getName(), application.getId());
         }
         List<Application> applications = client.getApplications();
         Assert.assertEquals(config.getTests().size(), applications.size());
-        for (Application application : applications) {
+    }
+
+    @Test
+    public void test_30_provision_application() {
+        for (Config.Test test : config.getTests()) {
+            Application application = client.getApplication(test.getName());
+            Assert.assertNotNull(application);
+
+            ApplicationInstance instance = client.provisionApplication(application, test.getInput());
+            Assert.assertNotNull(instance);
+
+            Assert.assertEquals(test.getName(), application.getId());
+        }
+
+    }
+
+    @Test
+    @Ignore
+    public void test_90_remove() {
+        for (Application application : client.getApplications()) {
             Assert.assertTrue(client.removeApplication(application));
         }
         Assert.assertEquals(0, client.getApplications().size());

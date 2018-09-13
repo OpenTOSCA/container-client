@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 
+// TODO: Make use of Optionals?!
 public interface ContainerClientAsync {
 
     CompletableFuture<List<Application>> getApplicationsAsync();

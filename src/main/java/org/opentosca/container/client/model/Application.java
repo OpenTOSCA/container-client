@@ -66,6 +66,10 @@ public class Application {
             return plan.getName();
         }
 
+        public String getType() {
+            return plan.getPlanType();
+        }
+
         public List<String> getInputParameters() {
             return plan.getInputParameters().stream().map(TParameter::getName).collect(Collectors.toList());
         }
