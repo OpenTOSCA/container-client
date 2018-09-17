@@ -21,7 +21,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.sun.istack.internal.Nullable;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
 import io.swagger.client.model.CsarDTO;
@@ -368,7 +367,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         }
     }
 
-    private PlanInstanceDTO waitForFinishedPlan(String plan, String instance, String csar, String serviceTemplate, @Nullable Long id) {
+    private PlanInstanceDTO waitForFinishedPlan(String plan, String instance, String csar, String serviceTemplate, Long id) {
         PlanInstanceDTO pi = null;
         final long sleep = 5000;
         final long timeout = TimeUnit.MINUTES.toMillis(10);
