@@ -3,16 +3,17 @@ package org.opentosca.container.client;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 
-// TODO: Make use of Optionals?!
 public interface ContainerClient {
 
     List<Application> getApplications();
 
-    Application getApplication(String id);
+    Optional<Application> getApplication(String id);
 
     Application uploadApplication(Path path);
 
@@ -20,7 +21,11 @@ public interface ContainerClient {
 
     ApplicationInstance provisionApplication(Application application, Map<String, String> inputParameters);
 
-    boolean terminateApplication(ApplicationInstance instance);
-
     List<ApplicationInstance> getApplicationInstances(Application application);
+
+    List<ApplicationInstance> getApplicationInstances(Application application, ServiceTemplateInstanceDTO.StateEnum... state);
+
+    Optional<ApplicationInstance> getApplicationInstance(Application application, String id);
+
+    boolean terminateApplicationInstance(ApplicationInstance instance);
 }

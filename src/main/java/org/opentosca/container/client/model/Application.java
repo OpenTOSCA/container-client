@@ -1,18 +1,15 @@
 package org.opentosca.container.client.model;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.swagger.client.model.CsarDTO;
 import io.swagger.client.model.InterfaceDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.ServiceTemplateDTO;
-import io.swagger.client.model.TParameter;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 
 @Builder
-@RequiredArgsConstructor
 public class Application {
 
     private final CsarDTO csar;
@@ -50,28 +47,6 @@ public class Application {
 
         public String getName() {
             return serviceTemplate.getName();
-        }
-    }
-
-    @RequiredArgsConstructor
-    public static class Plan {
-
-        private final PlanDTO plan;
-
-        public String getId() {
-            return plan.getId();
-        }
-
-        public String getName() {
-            return plan.getName();
-        }
-
-        public String getType() {
-            return plan.getPlanType();
-        }
-
-        public List<String> getInputParameters() {
-            return plan.getInputParameters().stream().map(TParameter::getName).collect(Collectors.toList());
         }
     }
 }
