@@ -22,16 +22,13 @@ import com.sun.jersey.api.client.filter.LoggingFilter;
 
 public abstract class JSONAPIClient {
 
-	private Logger logger = LoggerFactory.getLogger(JSONAPIClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(JSONAPIClient.class);
 
-	private java.util.logging.Logger javaLogger = java.util.logging.Logger.getLogger(JSONAPIClient.class.getName());
+	private static final java.util.logging.Logger javaLogger = java.util.logging.Logger.getLogger(JSONAPIClient.class.getName());
 
-	/**
-	 * Create a JSON API CLient
-	 */
-	public JSONAPIClient() {
-		this.javaLogger.setFilter(record -> {
-			this.logger.info("{} {} {}", new Date(record.getMillis()), record.getLevel(), record.getMessage());
+	static {
+		javaLogger.setFilter(record -> {
+			JSONAPIClient.logger.info("{} {} {}", new Date(record.getMillis()), record.getLevel(), record.getMessage());
 			return false;
 		});
 	}
@@ -78,7 +75,7 @@ public abstract class JSONAPIClient {
 				}
 
 			} catch (IOException e) {
-				this.logger.error("IOException while getting file resource", e);
+				JSONAPIClient.logger.error("IOException while getting file resource", e);
 				return null;
 			}
 		}
@@ -93,7 +90,7 @@ public abstract class JSONAPIClient {
 		Client client = Client.create();
 
 		if (logging) {
-			client.addFilter(new LoggingFilter(this.javaLogger));
+			client.addFilter(new LoggingFilter(JSONAPIClient.javaLogger));
 		}
 
 		WebResource webResource = client.resource(resourceName);
@@ -107,7 +104,7 @@ public abstract class JSONAPIClient {
 	}
 
 	protected String getLastPathSegment(URI uri) {
-		this.logger.info("Getting last path segment of: {}.", uri);
+		JSONAPIClient.logger.info("Getting last path segment of: {}.", uri);
 		return uri.getPath().substring(uri.getPath().lastIndexOf("/") + 1);
 	}
 }

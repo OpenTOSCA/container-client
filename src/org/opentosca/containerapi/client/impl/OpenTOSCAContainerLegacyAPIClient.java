@@ -31,7 +31,7 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInternalAPIClient
 		implements IOpenTOSCAContainerAPIClient {
 
-	private Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerLegacyAPIClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerLegacyAPIClient.class);
 
 	public OpenTOSCAContainerLegacyAPIClient() {
 		this.containerUrl = URI.create("http://localhost:1337/");
@@ -92,7 +92,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		QName qname = QName.valueOf(URLDecoder.decode(URLDecoder.decode(mainServiceTemplateName)));
 
 		// POST Request: Starts Plan
-		this.logger.info("input properties: {}", planInputJsonObj);
+		OpenTOSCAContainerLegacyAPIClient.logger.info("input properties: {}", planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
@@ -112,7 +112,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		while (!serviceInstanceIsAvailable) {
 			try {
 				JSONObject jsonObj = this.getJSONResource(serviceInstancesResourceUrl);
-				this.logger.debug("JSON OBJ: {}", jsonObj);
+				OpenTOSCAContainerLegacyAPIClient.logger.debug("JSON OBJ: {}", jsonObj);
 				int currentCount = jsonObj.getJSONArray("References").length();
 				if (currentCount > 1) { // Self + service instance
 					JSONArray jsonRefs = jsonObj.getJSONArray("References");
@@ -124,7 +124,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 							// @hahnml: Resolve the internal host in the URL to the external one
 							serviceInstanceUrl = resolveUrl(jsonRef.getString("href"), this.containerHost);
 							serviceInstanceIsAvailable = true;
-							this.logger.info("Instance URL: {}", serviceInstanceUrl);
+							OpenTOSCAContainerLegacyAPIClient.logger.info("Instance URL: {}", serviceInstanceUrl);
 							break;
 						}
 					}
@@ -137,7 +137,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			} catch (JSONException e) {
 				// catch JSONException which is thrown if the plan instance is not available yet
-				this.logger.info("Waiting for plan instance to be available");
+				logger.info("Waiting for plan instance to be available");
 
 				try {
 					Thread.sleep(10000); // 10 seconds
@@ -212,7 +212,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				try {
 					byteOutputStream.close();
 				} catch (IOException e) {
-					this.logger.error("Failed to close output stream.", e);
+					OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
 				}
 			}
 			// String name, List<String> inputParameters, List<ServiceInstance>
@@ -234,7 +234,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 		}
 		else {
-			this.logger.warn("Upload not possible as the CSAR file at {} couldn't be found.", absPath);
+			OpenTOSCAContainerLegacyAPIClient.logger.warn("Upload not possible as the CSAR file at {} couldn't be found.", absPath);
 			return null;
 		}
 	}
@@ -278,7 +278,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				try {
 					byteOutputStream.close();
 				} catch (IOException e) {
-					this.logger.error("Failed to close output stream.", e);
+					OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
 				}
 			}
 
@@ -313,7 +313,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			try {
 				byteOutputStream.close();
 			} catch (IOException e) {
-				this.logger.error("Failed to close output stream.", e);
+				OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
 			}
 		}
 
@@ -360,7 +360,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 	public boolean terminateServiceInstance(final ServiceInstance instance) {
 		JSONObject planInputJsonObj = this.getPlanAsJson(instance.getApplicationId(), Constants.TERMINATE_PLAN_PATH)
 				.getJSONObject("Plan");
-		this.logger.debug("JSON: {}", planInputJsonObj);
+		OpenTOSCAContainerLegacyAPIClient.logger.debug("JSON: {}", planInputJsonObj);
 
 		// fill up the planInput with the given values
 		JSONArray inputParamArray = planInputJsonObj.getJSONArray("InputParameters");
@@ -397,7 +397,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				+ "/Instances";
 
 		// POST Request: Starts Plan
-		this.logger.debug("input properties: {}", planInputJsonObj);
+		OpenTOSCAContainerLegacyAPIClient.logger.debug("input properties: {}", planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
@@ -536,7 +536,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		String correlationId = serviceInstancesResourceUrl.split("BuildPlanCorrelationId=")[1];
 
 		String planInstanceUrl = serviceInstance.getURL() + "/PlanInstances/" + correlationId + "/State";
-		this.logger.debug("JSON: {}", planInstanceUrl);
+		OpenTOSCAContainerLegacyAPIClient.logger.debug("JSON: {}", planInstanceUrl);
 
 		// await operation completion
 		boolean instanceFinished = false;
@@ -544,11 +544,11 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
-				this.logger.warn("Thread was interrupted.", e);
+				OpenTOSCAContainerLegacyAPIClient.logger.warn("Thread was interrupted.", e);
 			}
 
 			JSONObject planInstanceRespJson = this.getJSONResource(planInstanceUrl);
-			this.logger.debug("JSON: {}", planInstanceRespJson);
+			OpenTOSCAContainerLegacyAPIClient.logger.debug("JSON: {}", planInstanceRespJson);
 
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
 				instanceFinished = true;

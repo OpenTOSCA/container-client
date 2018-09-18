@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ServiceInstance {
 
-	private Logger logger = LoggerFactory.getLogger(ServiceInstance.class);
+	private static final Logger logger = LoggerFactory.getLogger(ServiceInstance.class);
 	private String applicationId;
 	private URI legacyUri; // url
 	private Map<String, String> properties; //
@@ -98,7 +98,7 @@ public class ServiceInstance {
 			return new URI("csars/" + this.applicationId + "/servicetemplates/"
 					+ URLEncoder.encode(URLEncoder.encode(this.serviceTemplateId.toString())) + "/instances/" + this.id);
 		} catch (URISyntaxException e) {
-			this.logger.error("Failed to get Service Instance url.", e);
+			ServiceInstance.logger.error("Failed to get Service Instance url.", e);
 			return null;
 		}
 	}

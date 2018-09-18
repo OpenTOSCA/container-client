@@ -38,7 +38,7 @@ import com.sun.jersey.api.client.WebResource.Builder;
  */
 public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient {
 
-	private Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerInternalAPIClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerInternalAPIClient.class);
 	URI containerUrl;
 
 	// @hahnml: Remember the external and internal container host to resolve correct
@@ -322,7 +322,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			if (!title.equalsIgnoreCase(Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)) {
 				href = referencesArray.getJSONObject(i)
 						.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
-				this.logger.debug("href: {}", href);
+				OpenTOSCAContainerInternalAPIClient.logger.debug("href: {}", href);
 				break;
 			}
 		}
@@ -360,7 +360,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					this.getInstanceState(nodeInstanceUrl),
 					this.getNodeTemplateNameFromLegacyNodeInstanceURI(nodeInstanceUrl));
 		} catch (SAXException | IOException | ParserConfigurationException e) {
-			this.logger.error("Failed the get node instance from node instance url.", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Failed the get node instance from node instance url.", e);
 		}
 		return new NodeInstance(serviceInstanceId, nodeInstanceUrl, new HashMap<String, String>(),
 				this.getInstanceState(nodeInstanceUrl),
@@ -512,7 +512,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			return new RelationInstance(serviceInstanceId, relationInstanceUrl,
 					this.getInstanceProperties(relationInstanceUrl), this.getInstanceState(relationInstanceUrl));
 		} catch (SAXException | IOException | ParserConfigurationException e) {
-			this.logger.error("Failed to get relation instance from relation instance url.", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Failed to get relation instance from relation instance url.", e);
 		}
 		return new RelationInstance(serviceInstanceId, relationInstanceUrl, new HashMap<String, String>(),
 				this.getInstanceState(relationInstanceUrl));
@@ -636,7 +636,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					+ Constants.OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS
 					+ Constants.OPENTOSCACONTAIENRAPI_PATH_PROPERTIES;
 		} catch (UnsupportedEncodingException e) {
-			this.logger.error("Fauled to get properties url.", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Fauled to get properties url.", e);
 		}
 
 		JSONObject jsonObj = this.getJSONResource(propertiesUrl);
@@ -670,7 +670,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			docFac.setNamespaceAware(true);
 			doc = docFac.newDocumentBuilder().parse(new InputSource(new StringReader(xmlString)));
 		} catch (SAXException | IOException | ParserConfigurationException e) {
-			this.logger.error("Failed to parse string to dom.", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Failed to parse string to dom.", e);
 		}
 		if (doc != null)
 			return doc.getDocumentElement();
@@ -787,7 +787,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				}
 			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Failed to get relationship templates", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Failed to get relationship templates", e);
 		}
 
 		return relationshipTemplates;
@@ -821,7 +821,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				}
 			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Filed to get node templates", e);
+			OpenTOSCAContainerInternalAPIClient.logger.error("Filed to get node templates", e);
 		}
 
 		return nodeTemplates;
