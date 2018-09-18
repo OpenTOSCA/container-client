@@ -70,10 +70,11 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		String result = builder.get(String.class);
 
-		if (result.contains(Constants.OPENTOSCACONTAINERAPI_PLAN_STATE))
+		if (result.contains(Constants.OPENTOSCACONTAINERAPI_PLAN_STATE)) {
 			return true;
-		else
+		} else {
 			return false;
+		}
 	}
 
 	private Element findPropertiesElement(Element element) {
@@ -99,10 +100,11 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getAuthor(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS))
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS)) {
 			return appProps.getJSONArray(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS).toString();
-		else
+		} else {
 			return null;
+		}
 	}
 
 	URI getContainerUrl() {
@@ -114,17 +116,19 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getDescription(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION))
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION)) {
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION);
-		else
+		} else {
 			return null;
+		}
 	}
 
 	String getDisplayName(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME))
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME)) {
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME);
-		else
+		} else {
 			return null;
+		}
 	}
 
 	String getDisplayName(final String csarName) {
@@ -713,10 +717,11 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getVersion(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION))
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION)) {
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION);
-		else
+		} else {
 			return null;
+		}
 	}
 
 	boolean isOpenTOSCAParam(String paramName) {
