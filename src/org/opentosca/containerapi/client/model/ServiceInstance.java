@@ -8,6 +8,9 @@ import java.util.Map;
 
 import javax.xml.namespace.QName;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author francoaa
@@ -15,6 +18,7 @@ import javax.xml.namespace.QName;
  */
 public class ServiceInstance {
 
+	private static final Logger logger = LoggerFactory.getLogger(ServiceInstance.class);
 	private String applicationId;
 	private URI legacyUri; // url
 	private Map<String, String> properties; //
@@ -38,7 +42,7 @@ public class ServiceInstance {
 	}
 
 	public URI getURL() {
-		return legacyUri;
+		return this.legacyUri;
 	}
 
 	public Long getId() {
@@ -50,7 +54,7 @@ public class ServiceInstance {
 	}
 
 	public Map<String, String> getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public String getApplicationId() {
@@ -73,7 +77,7 @@ public class ServiceInstance {
 		int stepCount = -1;
 		int countedSteps = 0;
 		// fetch first progress log
-		for (Log log : buildPlanLogs) {
+		for (Log log : this.buildPlanLogs) {
 			if (log.getMessage().contains("overall topology with steps of")) {
 				if (stepCount == -1) {
 					String msg = log.getMessage();
@@ -84,19 +88,17 @@ public class ServiceInstance {
 			}
 		}
 
-		if (stepCount == -1) {
-			return 0f;
-		}
+		if (stepCount == -1) return 0f;
 
 		return ((float) countedSteps) / ((float) stepCount);
 	}
 
 	public URI getServiceInstanceUrl() {
 		try {
-			return new URI("csars/" + applicationId + "/servicetemplates/"
-					+ URLEncoder.encode(URLEncoder.encode(serviceTemplateId.toString())) + "/instances/" + this.id);
+			return new URI("csars/" + this.applicationId + "/servicetemplates/"
+					+ URLEncoder.encode(URLEncoder.encode(this.serviceTemplateId.toString())) + "/instances/" + this.id);
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			ServiceInstance.logger.error("Failed to get Service Instance url.", e);
 			return null;
 		}
 	}
