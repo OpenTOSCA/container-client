@@ -78,9 +78,9 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private Element findPropertiesElement(Element element) {
-		if (element.getLocalName().equals(Constants.OPENTOSCACONTAINERAPI_RESOURCE_XML_PROPERTIES))
+		if (element.getLocalName().equals(Constants.OPENTOSCACONTAINERAPI_RESOURCE_XML_PROPERTIES)) {
 			return element;
-		else {
+		} else {
 			NodeList nodeList = element.getChildNodes();
 
 			for (int i = 0; i < nodeList.getLength(); i++) {
@@ -444,7 +444,9 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	protected URI getOperationUrl(final String csarName, final String interfaceName, final String operationName) {
 		for (URI opUri : this.getOperationsUrls(csarName, interfaceName)) {
-			if (this.getLastPathSegment(opUri).equals(operationName)) return opUri;
+			if (this.getLastPathSegment(opUri).equals(operationName)) {
+				return opUri;
+			}
 		}
 		return null;
 	}
@@ -596,9 +598,9 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			}
 		}
 
-		if (planInstanceUrl.isEmpty())
+		if (planInstanceUrl.isEmpty()) {
 			return logs;
-		else {
+		} else {
 			String logsUrl = planInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_LOGS;
 
 			JSONArray jsonAr = this.getJSONArrayResource(logsUrl);
@@ -676,10 +678,11 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		} catch (SAXException | IOException | ParserConfigurationException e) {
 			OpenTOSCAContainerInternalAPIClient.logger.error("Failed to parse string to dom.", e);
 		}
-		if (doc != null)
+		if (doc != null) {
 			return doc.getDocumentElement();
-		else
+		} else {
 			return null;
+		}
 	}
 
 	Map<String, String> getServiceInstanceProperties(String serviceInstanceId) {

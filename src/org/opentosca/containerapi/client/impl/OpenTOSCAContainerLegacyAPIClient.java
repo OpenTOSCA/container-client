@@ -65,16 +65,14 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				JSONObject inputParam = inputParamArray.getJSONObject(index).getJSONObject("InputParameter");
 				if (params.containsKey(inputParam.getString("Name"))) {
 					inputParam.put("Value", params.get(inputParam.getString("Name")));
-				}
-				else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+				} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 					if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 						// @hahnml: Resolve the external host in the URL to the internal one
 						inputParam.put("Value",
 								resolveUrl(
 										this.getOpenTOSCAParamValue(inputParam.getString("Name"), application.getId()),
 										this.containerHostInternal));
-					}
-					else {
+					} else {
 						inputParam.put("Value",
 								this.getOpenTOSCAParamValue(inputParam.getString("Name"), application.getId()));
 					}
@@ -371,21 +369,18 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						URI.create(resolveUrl(instance.getURL().toString(), this.containerHostInternal)));
-			}
-			else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
+			} else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						resolveUrl(
 								this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()),
 								this.containerHostInternal));
-			}
-			else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
+			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						URI.create(resolveUrl(this.getContainerUrl() + instance.getServiceInstanceUrl().toString(),
 								this.containerHostInternal)));
-			}
-			else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()));
 			}
@@ -429,8 +424,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			if (instanceUpdate.getState().equals("DELETED")) {
 				serviceInstanceDeleted = true;
-			}
-			else {
+			} else {
 				try {
 					Thread.sleep(5000); // 5 seconds
 				} catch (InterruptedException e) {
@@ -501,18 +495,15 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			if (params.containsKey(inputParam.getString("Name"))) {
 				inputParam.put("Value", params.get(inputParam.getString("Name")));
-			}
-			else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
+			} else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value", resolveUrl(
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), serviceInstance.getApplicationId()),
 						this.containerHostInternal));
-			}
-			else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), serviceInstance.getApplicationId()));
-			}
-			else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
+			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 
 				inputParam.put("Value",
@@ -601,7 +592,9 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 	public ServiceInstance getServiceInstance(Long id) {
 		for (Application app : this.getApplications()) {
 			for (ServiceInstance servInstance : this.getServiceInstances(app)) {
-				if (servInstance.getId() == id) return servInstance;
+				if (servInstance.getId() == id) {
+					return servInstance;
+				}
 			}
 		}
 		return null;
@@ -661,8 +654,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		for (String key : JSONObject.getNames(jsonObjResult)) {
 			if (key.equals("MessageID")) {
 				continue;
-			}
-			else {
+			} else {
 				result.put(key, jsonObjResult.getString(key));
 			}
 		}
