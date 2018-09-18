@@ -9,11 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import javax.management.RuntimeErrorException;
-import javax.swing.plaf.basic.BasicComboPopup.InvocationKeyHandler;
 import javax.ws.rs.core.MediaType;
 import javax.xml.namespace.QName;
 
@@ -21,11 +17,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opentosca.containerapi.client.IOpenTOSCAContainerAPIClient;
-import org.opentosca.containerapi.client.model.Application;
-import org.opentosca.containerapi.client.model.NodeInstance;
-import org.opentosca.containerapi.client.model.RelationInstance;
-import org.opentosca.containerapi.client.model.ServiceInstance;
-import org.opentosca.containerapi.client.model.ServiceTemplate;
+import org.opentosca.containerapi.client.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -36,6 +30,8 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 
 public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInternalAPIClient
 		implements IOpenTOSCAContainerAPIClient {
+
+	private Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerLegacyAPIClient.class);
 
 	public OpenTOSCAContainerLegacyAPIClient() {
 		this.containerUrl = URI.create("http://localhost:1337/");
@@ -69,14 +65,16 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				JSONObject inputParam = inputParamArray.getJSONObject(index).getJSONObject("InputParameter");
 				if (params.containsKey(inputParam.getString("Name"))) {
 					inputParam.put("Value", params.get(inputParam.getString("Name")));
-				} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+				}
+				else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 					if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 						// @hahnml: Resolve the external host in the URL to the internal one
 						inputParam.put("Value",
 								resolveUrl(
 										this.getOpenTOSCAParamValue(inputParam.getString("Name"), application.getId()),
 										this.containerHostInternal));
-					} else {
+					}
+					else {
 						inputParam.put("Value",
 								this.getOpenTOSCAParamValue(inputParam.getString("Name"), application.getId()));
 					}
@@ -94,7 +92,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		QName qname = QName.valueOf(URLDecoder.decode(URLDecoder.decode(mainServiceTemplateName)));
 
 		// POST Request: Starts Plan
-		System.out.println("input properties: " + planInputJsonObj);
+		this.logger.info("input properties: {}", planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
@@ -114,7 +112,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		while (!serviceInstanceIsAvailable) {
 			try {
 				JSONObject jsonObj = this.getJSONResource(serviceInstancesResourceUrl);
-				System.out.println(jsonObj.toString());
+				this.logger.debug("JSON OBJ: {}", jsonObj);
 				int currentCount = jsonObj.getJSONArray("References").length();
 				if (currentCount > 1) { // Self + service instance
 					JSONArray jsonRefs = jsonObj.getJSONArray("References");
@@ -126,7 +124,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 							// @hahnml: Resolve the internal host in the URL to the external one
 							serviceInstanceUrl = resolveUrl(jsonRef.getString("href"), this.containerHost);
 							serviceInstanceIsAvailable = true;
-							System.out.println("Instance URL: " + serviceInstanceUrl);
+							this.logger.info("Instance URL: {}", serviceInstanceUrl);
 							break;
 						}
 					}
@@ -139,7 +137,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			} catch (JSONException e) {
 				// catch JSONException which is thrown if the plan instance is not available yet
-				System.out.println("Waiting for plan instance to be available");
+				this.logger.info("Waiting for plan instance to be available");
 
 				try {
 					Thread.sleep(10000); // 10 seconds
@@ -193,9 +191,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			ClientResponse response = builder.post(ClientResponse.class, multiPart);
 
-			if (response.getStatus() >= 400) {
-				throw new Exception("The request produced an error!");
-			}
+			if (response.getStatus() >= 400) throw new Exception("The request produced an error!");
 			String ret = response.getEntity(String.class);
 			response.close();
 
@@ -216,8 +212,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				try {
 					byteOutputStream.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					this.logger.error("Failed to close output stream.", e);
 				}
 			}
 			// String name, List<String> inputParameters, List<ServiceInstance>
@@ -237,8 +232,9 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			return deployedAplication;
 
-		} else {
-			System.out.println("Upload not possible as the CSAR file at " + absPath + " couldn't be found");
+		}
+		else {
+			this.logger.warn("Upload not possible as the CSAR file at {} couldn't be found.", absPath);
 			return null;
 		}
 	}
@@ -250,7 +246,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 	 */
 	@Override
 	public List<Application> getApplications() {
-		List<String> csarNames = new ArrayList<String>();
+		List<String> csarNames = new ArrayList<>();
 		String csarsUrl = this.getLegacyContainerAPIUrl() + "/CSARs";
 
 		JSONObject respJsonObj = this.getJSONResource(csarsUrl);
@@ -264,7 +260,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			}
 		}
 
-		List<Application> apps = new ArrayList<Application>();
+		List<Application> apps = new ArrayList<>();
 		for (String csarName : csarNames) {
 			List<String> inputParams = getCreateInstanceInputParameters(csarName);
 
@@ -282,8 +278,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				try {
 					byteOutputStream.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					this.logger.error("Failed to close output stream.", e);
 				}
 			}
 
@@ -318,8 +313,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			try {
 				byteOutputStream.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				this.logger.error("Failed to close output stream.", e);
 			}
 		}
 
@@ -330,7 +324,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 	@Override
 	public List<NodeInstance> getNodeInstances(ServiceInstance serviceInstance) {
-		List<NodeInstance> nodeInstances = new ArrayList<NodeInstance>();
+		List<NodeInstance> nodeInstances = new ArrayList<>();
 		List<String> nodeTemplateUrls = this.getNodeTemplateURLs(serviceInstance);
 
 		for (String nodeTemplateUrl : nodeTemplateUrls) {
@@ -344,7 +338,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 	@Override
 	public List<RelationInstance> getRelationInstances(ServiceInstance serviceInstance) {
-		List<RelationInstance> relationInstances = new ArrayList<RelationInstance>();
+		List<RelationInstance> relationInstances = new ArrayList<>();
 		List<String> relationshipTemplateUrls = this.getRelationshipTemplateUrls(serviceInstance);
 
 		for (String nodeTemplateUrl : relationshipTemplateUrls) {
@@ -366,7 +360,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 	public boolean terminateServiceInstance(final ServiceInstance instance) {
 		JSONObject planInputJsonObj = this.getPlanAsJson(instance.getApplicationId(), Constants.TERMINATE_PLAN_PATH)
 				.getJSONObject("Plan");
-		System.out.println(planInputJsonObj);
+		this.logger.debug("JSON: {}", planInputJsonObj);
 
 		// fill up the planInput with the given values
 		JSONArray inputParamArray = planInputJsonObj.getJSONArray("InputParameters");
@@ -377,18 +371,21 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						URI.create(resolveUrl(instance.getURL().toString(), this.containerHostInternal)));
-			} else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
+			}
+			else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						resolveUrl(
 								this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()),
 								this.containerHostInternal));
-			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
+			}
+			else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value",
 						URI.create(resolveUrl(this.getContainerUrl() + instance.getServiceInstanceUrl().toString(),
 								this.containerHostInternal)));
-			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+			}
+			else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), instance.getApplicationId()));
 			}
@@ -400,7 +397,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 				+ "/Instances";
 
 		// POST Request: Starts Plan
-		System.out.println("input properties: " + planInputJsonObj);
+		this.logger.debug("input properties: {}", planInputJsonObj);
 		WebResource mainServiceTemplateInstancesResource = this.createWebResource(mainServiceTemplateInstancesUrl);
 		ClientResponse response = mainServiceTemplateInstancesResource.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, planInputJsonObj.toString());
@@ -432,7 +429,8 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			if (instanceUpdate.getState().equals("DELETED")) {
 				serviceInstanceDeleted = true;
-			} else {
+			}
+			else {
 				try {
 					Thread.sleep(5000); // 5 seconds
 				} catch (InterruptedException e) {
@@ -503,15 +501,18 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			if (params.containsKey(inputParam.getString("Name"))) {
 				inputParam.put("Value", params.get(inputParam.getString("Name")));
-			} else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
+			}
+			else if (inputParam.getString("Name").equals("instanceDataAPIUrl")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 				inputParam.put("Value", resolveUrl(
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), serviceInstance.getApplicationId()),
 						this.containerHostInternal));
-			} else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
+			}
+			else if (this.isOpenTOSCAParam(inputParam.getString("Name"))) {
 				inputParam.put("Value",
 						this.getOpenTOSCAParamValue(inputParam.getString("Name"), serviceInstance.getApplicationId()));
-			} else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
+			}
+			else if (inputParam.getString("Name").equals("OpenTOSCAContainerAPIServiceInstanceURL")) {
 				// @hahnml: Resolve the external host in the URL to the internal one
 
 				inputParam.put("Value",
@@ -535,7 +536,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		String correlationId = serviceInstancesResourceUrl.split("BuildPlanCorrelationId=")[1];
 
 		String planInstanceUrl = serviceInstance.getURL() + "/PlanInstances/" + correlationId + "/State";
-		System.out.println(planInstanceUrl);
+		this.logger.debug("JSON: {}", planInstanceUrl);
 
 		// await operation completion
 		boolean instanceFinished = false;
@@ -543,12 +544,11 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				this.logger.warn("Thread was interrupted.", e);
 			}
 
 			JSONObject planInstanceRespJson = this.getJSONResource(planInstanceUrl);
-			System.out.println(planInstanceRespJson);
+			this.logger.debug("JSON: {}", planInstanceRespJson);
 
 			if (planInstanceRespJson.getJSONObject("PlanInstance").getString("State").equals("finished")) {
 				instanceFinished = true;
@@ -557,7 +557,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		}
 
 		// get output
-		Map<String, String> planOutputs = new HashMap<String, String>();
+		Map<String, String> planOutputs = new HashMap<>();
 		String planInstanceOutputUrl = serviceInstance.getURL() + "/PlanInstances/" + correlationId + "/Output";
 
 		JSONObject planInstanceOutputJson = this.getJSONResource(planInstanceOutputUrl);
@@ -601,9 +601,7 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 	public ServiceInstance getServiceInstance(Long id) {
 		for (Application app : this.getApplications()) {
 			for (ServiceInstance servInstance : this.getServiceInstances(app)) {
-				if (servInstance.getId() == id) {
-					return servInstance;
-				}
+				if (servInstance.getId() == id) return servInstance;
 			}
 		}
 		return null;
@@ -635,43 +633,40 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 		String managementBusUrl = "http://" + this.containerHost + ":8086/ManagementBus/v1/invoker";
 
-		WebResource webRes = this.createWebResource(managementBusUrl);		
+		WebResource webRes = this.createWebResource(managementBusUrl);
 		ClientResponse resp = webRes.post(ClientResponse.class, reqJsonObj.toString());
 
-		if (resp.getStatus() != 202) {
-			throw new RuntimeException("Couldn't call operation " + interfaceName + "#" + operationName
-					+ " on NodeInstance " + nodeInstance.getId());
-		}
+		if (resp.getStatus() != 202) throw new RuntimeException("Couldn't call operation " + interfaceName + "#" + operationName
+				+ " on NodeInstance " + nodeInstance.getId());
 
-		String taskResourceUrl = resp.getHeaders().get("Location").get(0);		
-		WebResource taskResource = this.createWebResource(taskResourceUrl);		
+		String taskResourceUrl = resp.getHeaders().get("Location").get(0);
+		WebResource taskResource = this.createWebResource(taskResourceUrl);
 		ClientResponse taskResourceResponse = taskResource.get(ClientResponse.class);
-		
-		if(taskResourceResponse.getStatus() != 200) {
-			throw new RuntimeException("Couldn't call operation result of " + interfaceName + "#" + operationName
-					+ " on NodeInstance " + nodeInstance.getId());
-		}
-		
-		String jsonString = taskResourceResponse.getEntity(String.class);		
+
+		if (taskResourceResponse.getStatus() != 200) throw new RuntimeException("Couldn't call operation result of " + interfaceName + "#" + operationName
+				+ " on NodeInstance " + nodeInstance.getId());
+
+		String jsonString = taskResourceResponse.getEntity(String.class);
 		JSONObject respJsonObj = new JSONObject(jsonString);
-		
-		while(respJsonObj.has("status") && respJsonObj.get("status").equals("PENDING")) {
+
+		while (respJsonObj.has("status") && respJsonObj.get("status").equals("PENDING")) {
 			taskResourceResponse = taskResource.get(ClientResponse.class);
 			jsonString = taskResourceResponse.getEntity(String.class);
 			respJsonObj = new JSONObject(jsonString);
 		}
-		
-		JSONObject jsonObjResult = respJsonObj.getJSONObject("response");		
-		Map<String, String> result = new HashMap<String,String>();
-		
-		for(String key : JSONObject.getNames(jsonObjResult)) {
-			if(key.equals("MessageID")) {
+
+		JSONObject jsonObjResult = respJsonObj.getJSONObject("response");
+		Map<String, String> result = new HashMap<>();
+
+		for (String key : JSONObject.getNames(jsonObjResult)) {
+			if (key.equals("MessageID")) {
 				continue;
-			} else {
+			}
+			else {
 				result.put(key, jsonObjResult.getString(key));
 			}
 		}
-		
+
 		return result;
 	}
 

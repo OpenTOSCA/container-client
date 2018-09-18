@@ -6,14 +6,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,22 +15,13 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.Node;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.opentosca.containerapi.client.model.Application;
-import org.opentosca.containerapi.client.model.Interface;
-import org.opentosca.containerapi.client.model.Log;
-import org.opentosca.containerapi.client.model.NodeInstance;
-import org.opentosca.containerapi.client.model.NodeTemplate;
-import org.opentosca.containerapi.client.model.RelationInstance;
-import org.opentosca.containerapi.client.model.RelationshipTemplate;
-import org.opentosca.containerapi.client.model.ServiceInstance;
+import org.opentosca.containerapi.client.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -54,6 +38,7 @@ import com.sun.jersey.api.client.WebResource.Builder;
  */
 public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient {
 
+	private Logger logger = LoggerFactory.getLogger(OpenTOSCAContainerInternalAPIClient.class);
 	URI containerUrl;
 
 	// @hahnml: Remember the external and internal container host to resolve correct
@@ -66,7 +51,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	String legacyContainerAPIUrl = "";
 
 	List<String> filterManagementParameters(List<String> inputParams) {
-		List<String> filteredParams = new ArrayList<String>();
+		List<String> filteredParams = new ArrayList<>();
 
 		for (String inputParam : inputParams) {
 			if (!Arrays.asList(Constants.OPENTOSCACONTAINERAPI_MANAGEMENT_PARAMETERS).contains(inputParam)) {
@@ -85,21 +70,20 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		String result = builder.get(String.class);
 
-		if (result.contains(Constants.OPENTOSCACONTAINERAPI_PLAN_STATE)) {
+		if (result.contains(Constants.OPENTOSCACONTAINERAPI_PLAN_STATE))
 			return true;
-		} else {
+		else
 			return false;
-		}
 	}
 
 	private Element findPropertiesElement(Element element) {
-		if (element.getLocalName().equals(Constants.OPENTOSCACONTAINERAPI_RESOURCE_XML_PROPERTIES)) {
+		if (element.getLocalName().equals(Constants.OPENTOSCACONTAINERAPI_RESOURCE_XML_PROPERTIES))
 			return element;
-		} else {
+		else {
 			NodeList nodeList = element.getChildNodes();
 
 			for (int i = 0; i < nodeList.getLength(); i++) {
-				if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
+				if (nodeList.item(i).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
 					Element childElem = (Element) nodeList.item(i);
 					return this.findPropertiesElement(childElem);
 				}
@@ -115,11 +99,10 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getAuthor(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS)) {
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS))
 			return appProps.getJSONArray(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_AUTHORS).toString();
-		} else {
+		else
 			return null;
-		}
 	}
 
 	URI getContainerUrl() {
@@ -131,19 +114,17 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getDescription(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION)) {
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION))
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DESCRIPTION);
-		} else {
+		else
 			return null;
-		}
 	}
 
 	String getDisplayName(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME)) {
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME))
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_JSON_DISPLAYNAME);
-		} else {
+		else
 			return null;
-		}
 	}
 
 	String getDisplayName(final String csarName) {
@@ -158,10 +139,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 		ClientResponse instancePropertiesResponse = nodeInstancePropertiesResource.accept(MediaType.APPLICATION_XML)
 				.get(ClientResponse.class);
-		
-		if(instancePropertiesResponse.getStatus() == 204) {
-			return new HashMap<>();
-		}
+
+		if (instancePropertiesResponse.getStatus() == 204) return new HashMap<>();
 
 		String responseBody = instancePropertiesResponse.getEntity(String.class);
 
@@ -181,7 +160,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	List<ServiceInstance> getInstances(String csarName) {
-		List<ServiceInstance> instances = new ArrayList<ServiceInstance>();
+		List<ServiceInstance> instances = new ArrayList<>();
 
 		String serviceTemplateInstancesURL = this.getLegacyMainServiceTemplateURL(csarName)
 				+ Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES;
@@ -218,7 +197,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private List<String> getInterfaceInputParameters(final String csarName, final String planPath) {
-		List<String> paramNames = new ArrayList<String>();
+		List<String> paramNames = new ArrayList<>();
 		JSONObject obj = this.getPlanAsJson(csarName, planPath);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
 		JSONArray jsonArrayParams = planObj
@@ -234,7 +213,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private List<String> getInterfaceInputParameters(URI uri) {
-		List<String> paramNames = new ArrayList<String>();
+		List<String> paramNames = new ArrayList<>();
 		JSONObject obj = this.getJSONResource(uri);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
 		JSONArray jsonArrayParams = planObj
@@ -251,7 +230,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	List<String> getInterfaceNames(final String csarName) {
 		String serviceTemplateInterfacesResourceUrl = this.getInterfacesUrl(csarName);
-		List<String> names = new ArrayList<String>();
+		List<String> names = new ArrayList<>();
 		JSONObject respJson = this.getJSONResource(serviceTemplateInterfacesResourceUrl);
 		this.getReferencesFromLegacyApiResource(respJson,
 				Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)
@@ -260,7 +239,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private List<String> getInterfaceOutputParameters(URI uri) {
-		List<String> paramNames = new ArrayList<String>();
+		List<String> paramNames = new ArrayList<>();
 		JSONObject obj = this.getJSONResource(uri);
 		JSONObject planObj = obj.getJSONObject(Constants.OPENTOSCACONTAINERAPI_INTERFACERESOURCE_JSON_PLAN);
 		JSONArray jsonArrayParams = planObj
@@ -276,13 +255,13 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	List<Interface> getInterfaces(final String csarName) {
-		List<Interface> interfaces = new ArrayList<Interface>();
+		List<Interface> interfaces = new ArrayList<>();
 
 		List<String> names = this.getInterfaceNames(csarName);
 
 		for (String interfaceName : names) {
-			Map<String, List<String>> operations2InputParameters = new HashMap<String, List<String>>();
-			Map<String, List<String>> operations2OutputParameters = new HashMap<String, List<String>>();
+			Map<String, List<String>> operations2InputParameters = new HashMap<>();
+			Map<String, List<String>> operations2OutputParameters = new HashMap<>();
 
 			for (URI operationUrl : this.getOperationsUrls(csarName, interfaceName)) {
 				// we'll check only for plans
@@ -312,7 +291,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	@Deprecated
 	protected String getLegacyContainerAPIUrl() {
-		return legacyContainerAPIUrl;
+		return this.legacyContainerAPIUrl;
 	}
 
 	/*
@@ -326,7 +305,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		String url = this.getLegacyContainerAPIUrl() + Constants.OPENTOSCACONTAINERAPI_PATH_CSARS + "/" + csarName
 				+ Constants.OPENTOSCACONTAIENRAPI_PATH_SERVICETEMPLATES;
 
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("main", "true");
 		WebResource webResource = createWebResource(url, queryParams, true);
 		ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
@@ -343,7 +322,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			if (!title.equalsIgnoreCase(Constants.OPENTOSCACONTAIENRAPI_REFERENCESRESOURCE_JSON_TITLE_SELF)) {
 				href = referencesArray.getJSONObject(i)
 						.getString(Constants.OPENTOSCACONTAINERAPI_REFERENCESRESOURCE_JSON_HREF);
-				System.out.println(href);
+				this.logger.debug("href: {}", href);
 				break;
 			}
 		}
@@ -380,12 +359,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			return new NodeInstance(serviceInstanceId, nodeInstanceUrl, this.getInstanceProperties(nodeInstanceUrl),
 					this.getInstanceState(nodeInstanceUrl),
 					this.getNodeTemplateNameFromLegacyNodeInstanceURI(nodeInstanceUrl));
-		} catch (SAXException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			this.logger.error("Failed the get node instance from node instance url.", e);
 		}
 		return new NodeInstance(serviceInstanceId, nodeInstanceUrl, new HashMap<String, String>(),
 				this.getInstanceState(nodeInstanceUrl),
@@ -393,7 +368,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	List<NodeInstance> getNodeInstancesFromNodeTemplateUrl(String serviceInstanceId, String nodeTemplateUrl) {
-		List<NodeInstance> nodeInstances = new ArrayList<NodeInstance>();
+		List<NodeInstance> nodeInstances = new ArrayList<>();
 
 		WebResource nodeTemplateInstancesResource = this
 				.createWebResource(nodeTemplateUrl + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES);
@@ -417,7 +392,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	List<String> getNodeTemplateURLs(ServiceInstance serviceInstance) {
-		List<String> urls = new ArrayList<String>();
+		List<String> urls = new ArrayList<>();
 
 		WebResource serviceInstanceNodeTemplatesResource = this
 				.createWebResource(serviceInstance.getURL() + Constants.OPENTOSCACONTAINERAPI_PATHS_NODETEMPLATES);
@@ -446,15 +421,15 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		// <CorrelationID>1497362548773-0</CorrelationID>
 		// <csarEntrypoint>http://192.168.59.3:1337/containerapi/CSARs/MyTinyToDo_Bare_Docker.csar</csarEntrypoint>
 		switch (paramName) {
-		case "CorrelationID":
-			return String.valueOf(System.currentTimeMillis());
-		case "csarEntrypoint":
-			return this.legacyContainerAPIUrl + Constants.OPENTOSCACONTAINERAPI_PATHS_LEGACYCSARS + csarName;
-		case "instanceDataAPIUrl":
-			return this.getLegacyMainServiceTemplateURL(csarName) + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES
-					+ "/";
-		default:
-			return null;
+			case "CorrelationID":
+				return String.valueOf(System.currentTimeMillis());
+			case "csarEntrypoint":
+				return this.legacyContainerAPIUrl + Constants.OPENTOSCACONTAINERAPI_PATHS_LEGACYCSARS + csarName;
+			case "instanceDataAPIUrl":
+				return this.getLegacyMainServiceTemplateURL(csarName) + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES
+						+ "/";
+			default:
+				return null;
 		}
 	}
 
@@ -465,9 +440,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	protected URI getOperationUrl(final String csarName, final String interfaceName, final String operationName) {
 		for (URI opUri : this.getOperationsUrls(csarName, interfaceName)) {
-			if (this.getLastPathSegment(opUri).equals(operationName)) {
-				return opUri;
-			}
+			if (this.getLastPathSegment(opUri).equals(operationName)) return opUri;
 		}
 		return null;
 	}
@@ -538,15 +511,8 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 		try {
 			return new RelationInstance(serviceInstanceId, relationInstanceUrl,
 					this.getInstanceProperties(relationInstanceUrl), this.getInstanceState(relationInstanceUrl));
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			this.logger.error("Failed to get relation instance from relation instance url.", e);
 		}
 		return new RelationInstance(serviceInstanceId, relationInstanceUrl, new HashMap<String, String>(),
 				this.getInstanceState(relationInstanceUrl));
@@ -554,7 +520,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	List<RelationInstance> getRelationInstancesFromRelationshipTemplateUrl(String serviceInstanceId,
 			String relationshipTemplateUrl) {
-		List<RelationInstance> relationInstances = new ArrayList<RelationInstance>();
+		List<RelationInstance> relationInstances = new ArrayList<>();
 
 		WebResource nodeTemplateInstancesResource = this
 				.createWebResource(relationshipTemplateUrl + Constants.OPENTOSCACONTAINERAPI_PATHS_INSTANCES);
@@ -579,7 +545,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	List<String> getRelationshipTemplateUrls(ServiceInstance serviceInstance) {
 
-		List<String> urls = new ArrayList<String>();
+		List<String> urls = new ArrayList<>();
 
 		WebResource serviceInstanceNodeTemplatesResource = this.createWebResource(
 				serviceInstance.getURL() + Constants.OPENTOSCACONTAINERAPI_PATHS_RELATIONSHIPTEMPLATES);
@@ -626,9 +592,9 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			}
 		}
 
-		if (planInstanceUrl.isEmpty()) {
+		if (planInstanceUrl.isEmpty())
 			return logs;
-		} else {
+		else {
 			String logsUrl = planInstanceUrl + Constants.OPENTOSCACONTAINERAPI_PATH_LOGS;
 
 			JSONArray jsonAr = this.getJSONArrayResource(logsUrl);
@@ -644,7 +610,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	Map<String, String> getTOSCAMetaData(Application application) {
-		Map<String, String> toscaMetaMap = new HashMap<String, String>();
+		Map<String, String> toscaMetaMap = new HashMap<>();
 		String toscaMetadataUrl = this.createTOSCAMetaDataURL(application);
 
 		String toscaMetaDataContent = this.getOctetStreamResource(toscaMetadataUrl);
@@ -659,7 +625,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	Map<String, String> getServiceTemplateProperties(Application application) {
-		Map<String, String> properties = new HashMap<String, String>();
+		Map<String, String> properties = new HashMap<>();
 
 		String serviceTemplatesUrl = this.createServiceTemplatesUrl(application.getId());
 
@@ -670,8 +636,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					+ Constants.OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS
 					+ Constants.OPENTOSCACONTAIENRAPI_PATH_PROPERTIES;
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.logger.error("Fauled to get properties url.", e);
 		}
 
 		JSONObject jsonObj = this.getJSONResource(propertiesUrl);
@@ -686,7 +651,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				NodeList childNodes = propRootElement.getChildNodes();
 
 				for (int index = 0; index < childNodes.getLength(); index++) {
-					if (childNodes.item(index).getNodeType() == Node.ELEMENT_NODE
+					if (childNodes.item(index).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE
 							&& !childNodes.item(index).getLocalName().equals("PropertyMappings")) {
 						Element propertyElement = (Element) childNodes.item(index);
 						properties.put(propertyElement.getLocalName(), propertyElement.getTextContent());
@@ -704,25 +669,17 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 			DocumentBuilderFactory docFac = DocumentBuilderFactory.newInstance();
 			docFac.setNamespaceAware(true);
 			doc = docFac.newDocumentBuilder().parse(new InputSource(new StringReader(xmlString)));
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			this.logger.error("Failed to parse string to dom.", e);
 		}
-		if (doc != null) {
+		if (doc != null)
 			return doc.getDocumentElement();
-		} else {
+		else
 			return null;
-		}
 	}
 
 	Map<String, String> getServiceInstanceProperties(String serviceInstanceId) {
-		Map<String, String> properties = new HashMap<String, String>();
+		Map<String, String> properties = new HashMap<>();
 
 		String instancePropertiesURL = serviceInstanceId + Constants.OPENTOSCACONTAINERAPI_PATHS_PROPERTIES;
 
@@ -756,11 +713,10 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	String getVersion(JSONObject appProps) {
-		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION)) {
+		if (appProps.has(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION))
 			return appProps.getString(Constants.OPENTOSCACONTAINERAPI_APPLICATIONRESOURCE_VERSION);
-		} else {
+		else
 			return null;
-		}
 	}
 
 	boolean isOpenTOSCAParam(String paramName) {
@@ -768,12 +724,12 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	}
 
 	private Map<String, String> readPropertiesElementToMap(Element propertiesElement) {
-		Map<String, String> propMap = new HashMap<String, String>();
+		Map<String, String> propMap = new HashMap<>();
 
 		NodeList childNodes = propertiesElement.getChildNodes();
 
 		for (int i = 0; i < childNodes.getLength(); i++) {
-			if (childNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
+			if (childNodes.item(i).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
 				Element propChildElement = (Element) childNodes.item(i);
 
 				String key = propChildElement.getLocalName();
@@ -789,7 +745,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	List<RelationshipTemplate> getRelationshipTemplates(Application application) {
 		QName serviceTemplateId = this.getServiceTemplateId(application);
 
-		List<RelationshipTemplate> relationshipTemplates = new ArrayList<RelationshipTemplate>();
+		List<RelationshipTemplate> relationshipTemplates = new ArrayList<>();
 
 		String definitionsXmlString = this.getServiceTemplateXML(application);
 		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
@@ -799,7 +755,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					"//*[local-name()='RelationshipTemplate']");
 
 			for (int index = 0; index < relationshipTemplateElementList.getLength(); index++) {
-				if (relationshipTemplateElementList.item(index).getNodeType() == Node.ELEMENT_NODE) {
+				if (relationshipTemplateElementList.item(index).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
 					Element relationshipTemplateElement = (Element) relationshipTemplateElementList.item(index);
 
 					String type = relationshipTemplateElement.getAttribute("type");
@@ -813,14 +769,14 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					String sourceNode = null;
 					String targetNode = null;
 					for (int index2 = 0; index2 < childNodes.getLength(); index2++) {
-						if (childNodes.item(index2).getNodeType() == Node.ELEMENT_NODE) {
+						if (childNodes.item(index2).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
 							Element childNode = (Element) childNodes.item(index2);
 							switch (childNode.getLocalName()) {
-							case "SourceElement":
-								sourceNode = childNode.getAttribute("ref");
+								case "SourceElement":
+									sourceNode = childNode.getAttribute("ref");
 								break;
-							case "TargetElement":
-								targetNode = childNode.getAttribute("ref");
+								case "TargetElement":
+									targetNode = childNode.getAttribute("ref");
 								break;
 							}
 						}
@@ -831,8 +787,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				}
 			}
 		} catch (XPathExpressionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.logger.error("Failed to get relationship templates", e);
 		}
 
 		return relationshipTemplates;
@@ -842,7 +797,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 	List<NodeTemplate> getNodeTemplates(Application application) {
 		QName serviceTemplateId = this.getServiceTemplateId(application);
 
-		List<NodeTemplate> nodeTemplates = new ArrayList<NodeTemplate>();
+		List<NodeTemplate> nodeTemplates = new ArrayList<>();
 
 		String definitionsXmlString = this.getServiceTemplateXML(application);
 		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
@@ -852,7 +807,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 					"//*[local-name()='NodeTemplate']");
 
 			for (int index = 0; index < nodeTemplateElementList.getLength(); index++) {
-				if (nodeTemplateElementList.item(index).getNodeType() == Node.ELEMENT_NODE) {
+				if (nodeTemplateElementList.item(index).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
 					Element nodeTemplateElement = (Element) nodeTemplateElementList.item(index);
 
 					String type = nodeTemplateElement.getAttribute("type");
@@ -866,8 +821,7 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 				}
 			}
 		} catch (XPathExpressionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.logger.error("Filed to get node templates", e);
 		}
 
 		return nodeTemplates;
