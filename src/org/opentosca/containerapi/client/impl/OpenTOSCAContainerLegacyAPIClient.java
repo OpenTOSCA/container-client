@@ -268,23 +268,38 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			JSONObject appProps = this.getApplicationProperties(csarName);
 
 			String metadataStr = "";
-			OutputStream byteOutputStream = this.getApplicationContent(
-					csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
-
-			if (byteOutputStream != null) {
-				metadataStr = byteOutputStream.toString();
-				try {
-					byteOutputStream.close();
-				} catch (IOException e) {
-					OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
-				}
-			}
-
+			
+			this.fetchFileContentAsString(csarName, Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+			
+			if(metadataStr == null || metadataStr.isEmpty()) {
+				metadataStr = this.fetchFileContentAsString(csarName, Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON);
+			}			
+			
 			apps.add(new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
 					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
 					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr));
 		}
 		return apps;
+	}
+	
+	private String fetchFileContentAsString(String csarName, String path) {
+		String metadataStr = "";
+		
+		String relPath = csarName;		
+		if(path != null) {
+			relPath += "/" + path;
+		}		
+		OutputStream byteOutputStream = this.getApplicationContent(relPath);
+
+		if (byteOutputStream != null) {
+			metadataStr = byteOutputStream.toString();
+			try {
+				byteOutputStream.close();
+			} catch (IOException e) {
+				OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
+			}
+		}
+		return metadataStr;
 	}
 
 	/*

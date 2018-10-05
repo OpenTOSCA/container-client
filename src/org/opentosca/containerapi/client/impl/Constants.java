@@ -49,6 +49,7 @@ public class Constants {
 	public final static String OPENTOSCACONTAINERAPI_SERVICETEMPLATESRESOURCE_JSON_SERVICETEMPLATES = "service_templates";
 	public final static String OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA = "content/SELFSERVICE-Metadata";
 	public final static String OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON = "content/SELFSERVICE-Metadata/smartservice.json";
+	public final static String OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON = "content/selfserviceportal/files/smartservice.json";
 
 	public final static String OPENTOSCACONTAIENRAPI_PATH_BOUNDARYDEFS = "/boundarydefinitions";
 	public final static String OPENTOSCACONTAIENRAPI_PATH_PROPERTIES = "/properties";
