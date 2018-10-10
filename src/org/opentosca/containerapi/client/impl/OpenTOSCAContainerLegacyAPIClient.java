@@ -189,7 +189,8 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			ClientResponse response = builder.post(ClientResponse.class, multiPart);
 
-			if (response.getStatus() >= 400) throw new Exception("The request produced an error!");
+			if (response.getStatus() >= 400)
+				throw new Exception("The request produced an error!");
 			String ret = response.getEntity(String.class);
 			response.close();
 
@@ -201,17 +202,15 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			// get Application properties: display name, author, ...
 			JSONObject appProps = this.getApplicationProperties(csarName);
-			String metadataStr = "";
-			OutputStream byteOutputStream = this.getApplicationContent(
-					csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
 
-			if (byteOutputStream != null) {
-				metadataStr = byteOutputStream.toString();
-				try {
-					byteOutputStream.close();
-				} catch (IOException e) {
-					OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
-				}
+			String metadataStr = "";
+
+			metadataStr = this.fetchFileContentAsString(csarName,
+					Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+
+			if (metadataStr == null || metadataStr.isEmpty()) {
+				metadataStr = this.fetchFileContentAsString(csarName,
+						Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON);
 			}
 			// String name, List<String> inputParameters, List<ServiceInstance>
 			// instances, String displayName,
@@ -230,9 +229,9 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 
 			return deployedAplication;
 
-		}
-		else {
-			OpenTOSCAContainerLegacyAPIClient.logger.warn("Upload not possible as the CSAR file at {} couldn't be found.", absPath);
+		} else {
+			OpenTOSCAContainerLegacyAPIClient.logger
+					.warn("Upload not possible as the CSAR file at {} couldn't be found.", absPath);
 			return null;
 		}
 	}
@@ -268,27 +267,29 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 			JSONObject appProps = this.getApplicationProperties(csarName);
 
 			String metadataStr = "";
-			
-			this.fetchFileContentAsString(csarName, Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
-			
-			if(metadataStr == null || metadataStr.isEmpty()) {
-				metadataStr = this.fetchFileContentAsString(csarName, Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON);
-			}			
-			
+
+			metadataStr = this.fetchFileContentAsString(csarName,
+					Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+
+			if (metadataStr == null || metadataStr.isEmpty()) {
+				metadataStr = this.fetchFileContentAsString(csarName,
+						Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON);
+			}
+
 			apps.add(new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
 					this.getDisplayName(appProps), this.getVersion(appProps), this.getDescription(appProps),
 					this.getAuthor(appProps), this.getInterfaces(csarName), metadataStr));
 		}
 		return apps;
 	}
-	
+
 	private String fetchFileContentAsString(String csarName, String path) {
 		String metadataStr = "";
-		
-		String relPath = csarName;		
-		if(path != null) {
+
+		String relPath = csarName;
+		if (path != null) {
 			relPath += "/" + path;
-		}		
+		}
 		OutputStream byteOutputStream = this.getApplicationContent(relPath);
 
 		if (byteOutputStream != null) {
@@ -318,16 +319,13 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		JSONObject appProps = this.getApplicationProperties(csarName);
 
 		String metadataStr = "";
-		OutputStream byteOutputStream = this.getApplicationContent(
-				csarName + "/" + Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
 
-		if (byteOutputStream != null) {
-			metadataStr = byteOutputStream.toString();
-			try {
-				byteOutputStream.close();
-			} catch (IOException e) {
-				OpenTOSCAContainerLegacyAPIClient.logger.error("Failed to close output stream.", e);
-			}
+		metadataStr = this.fetchFileContentAsString(csarName,
+				Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA_SMARTSERVICESJSON);
+
+		if (metadataStr == null || metadataStr.isEmpty()) {
+			metadataStr = this.fetchFileContentAsString(csarName,
+					Constants.OPENTOSCACONTAINERAPI_PATH_CONTENT_METADATA2_SMARTSERVICESJSON);
 		}
 
 		return new Application(csarName, this.filterManagementParameters(inputParams), new ArrayList<String>(),
@@ -644,15 +642,17 @@ public class OpenTOSCAContainerLegacyAPIClient extends OpenTOSCAContainerInterna
 		WebResource webRes = this.createWebResource(managementBusUrl);
 		ClientResponse resp = webRes.post(ClientResponse.class, reqJsonObj.toString());
 
-		if (resp.getStatus() != 202) throw new RuntimeException("Couldn't call operation " + interfaceName + "#" + operationName
-				+ " on NodeInstance " + nodeInstance.getId());
+		if (resp.getStatus() != 202)
+			throw new RuntimeException("Couldn't call operation " + interfaceName + "#" + operationName
+					+ " on NodeInstance " + nodeInstance.getId());
 
 		String taskResourceUrl = resp.getHeaders().get("Location").get(0);
 		WebResource taskResource = this.createWebResource(taskResourceUrl);
 		ClientResponse taskResourceResponse = taskResource.get(ClientResponse.class);
 
-		if (taskResourceResponse.getStatus() != 200) throw new RuntimeException("Couldn't call operation result of " + interfaceName + "#" + operationName
-				+ " on NodeInstance " + nodeInstance.getId());
+		if (taskResourceResponse.getStatus() != 200)
+			throw new RuntimeException("Couldn't call operation result of " + interfaceName + "#" + operationName
+					+ " on NodeInstance " + nodeInstance.getId());
 
 		String jsonString = taskResourceResponse.getEntity(String.class);
 		JSONObject respJsonObj = new JSONObject(jsonString);
