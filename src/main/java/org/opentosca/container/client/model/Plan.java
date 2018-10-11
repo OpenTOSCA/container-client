@@ -1,11 +1,15 @@
 package org.opentosca.container.client.model;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.TParameter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Wrapper class for PlanDTO
+ */
 
 @RequiredArgsConstructor
 public class Plan {
