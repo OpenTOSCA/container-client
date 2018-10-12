@@ -18,6 +18,8 @@ public class ApplicationInstance {
 
     private final List<PlanDTO> managementPlans;
 
+    // TODO: List of management plan instances
+
     public String getId() {
         return serviceTemplateInstance.getId().toString();
     }
