@@ -1,7 +1,12 @@
 package org.opentosca.container.client.model;
 
 import io.swagger.client.model.PlanInstanceDTO;
+import io.swagger.client.model.PlanInstanceOutputDTO;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Wrapper class for PlanInstanceDTO
@@ -27,6 +32,9 @@ public class PlanInstance {
         return plan.getType();
     }
 
-    // TODO convert to PlanInstanceOutput before returning.
-    // public List<PlanInstanceOutput> getOutputs() { return plan.getOutputs();}
+    public Map<String, String> getOutputMappings() {
+        List<PlanInstanceOutputDTO> outputs = plan.getOutputs();
+        return outputs.stream().collect(Collectors.toMap(PlanInstanceOutputDTO::getName, PlanInstanceOutputDTO::getValue));
+
+    }
 }
