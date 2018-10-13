@@ -8,6 +8,18 @@ public final class ContainerClientBuilder {
     private Integer port = 1337;
     private Integer timeout = (int) TimeUnit.MINUTES.toMillis(5);
 
+    public static ContainerClientBuilder builder() {
+        return new ContainerClientBuilder();
+    }
+
+    public static ContainerClient defaultClient() {
+        return builder().build();
+    }
+
+    public static ContainerClientAsync defaultClientAsync() {
+        return builder().buildAsync();
+    }
+
     public ContainerClientBuilder withHostname(String hostname) {
         this.hostname = hostname;
         return this;
@@ -23,23 +35,11 @@ public final class ContainerClientBuilder {
         return this;
     }
 
-    public static ContainerClientBuilder builder() {
-        return new ContainerClientBuilder();
-    }
-
     public ContainerClient build() {
         return new SwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
     }
 
     public ContainerClientAsync buildAsync() {
         return new SwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
-    }
-
-    public static ContainerClient defaultClient() {
-        return builder().build();
-    }
-
-    public static ContainerClientAsync defaultClientAsync() {
-        return builder().buildAsync();
     }
 }
