@@ -1,6 +1,8 @@
 package org.opentosca.container.client.model;
 
 import io.swagger.client.model.PlanInstanceDTO;
+import io.swagger.client.model.PlanInstanceEventDTO;
+import io.swagger.client.model.PlanInstanceInputDTO;
 import io.swagger.client.model.PlanInstanceOutputDTO;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +33,20 @@ public class PlanInstance {
     public PlanInstanceDTO.TypeEnum getType() {
         return plan.getType();
     }
+
+    public List<PlanInstanceInputDTO> getInputs() {
+        return plan.getInputs();
+    }
+
+    public List<PlanInstanceOutputDTO> getOutputs() {
+        return plan.getOutputs();
+    }
+
+    public List<PlanInstanceEventDTO> getLogs() {
+        return plan.getLogs();
+    }
+
+
 
     public Map<String, String> getOutputMappings() {
         List<PlanInstanceOutputDTO> outputs = plan.getOutputs();
