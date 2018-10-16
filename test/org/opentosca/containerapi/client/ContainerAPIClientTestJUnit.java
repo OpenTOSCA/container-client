@@ -151,6 +151,7 @@ public class ContainerAPIClientTestJUnit {
 		case "testFGetInstanceProperties":
 		case "testGTestInstanceRuns":
 		case "testHDeleteInstance":
+		case "testEGetServiceInstance":
 			this.application = client.getApplications().get(0);
 			// just makes the the testing more robust
 			this.instance = this.getInstanceBasedOnHighestId(client.getServiceInstances(application));
@@ -199,7 +200,8 @@ public class ContainerAPIClientTestJUnit {
 			application = deployedApplication;
 
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testADeployApplication +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testADeployApplication +\n" + e.getMessage());
 		}
 	}
 
@@ -218,7 +220,8 @@ public class ContainerAPIClientTestJUnit {
 			}
 			assertEquals(1, applications.size());
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testBGetApplications +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testBGetApplications +\n" + e.getMessage());
 		}
 	}
 
@@ -239,7 +242,8 @@ public class ContainerAPIClientTestJUnit {
 			}
 
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testCGetServiceTemplates +\n" + e.getMessage());
+			org.junit.Assert.fail(
+					"Error with " + runConfiguration + " in Mehtod testCGetServiceTemplates +\n" + e.getMessage());
 		}
 
 	}
@@ -251,7 +255,8 @@ public class ContainerAPIClientTestJUnit {
 			System.out.println("input parameters: " + inputParams);
 			assertFalse(inputParams.isEmpty());
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testDGetInputParameters +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testDGetInputParameters +\n" + e.getMessage());
 		}
 	}
 
@@ -272,7 +277,20 @@ public class ContainerAPIClientTestJUnit {
 			assertEquals(1, (int) instance.getCreationProgress());
 			System.out.println("output parameters: " + instance.getPlanOutputParameters());
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testECreateInstance +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testECreateInstance +\n" + e.getMessage());
+		}
+	}
+
+	@Test
+	public void testEGetServiceInstance() {
+		try {
+			long serviceInstanceId = instance.getId();
+			ServiceInstance testInstance = client.getServiceInstance(serviceInstanceId);
+			assertNotNull(testInstance);
+		} catch (Exception e) {
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testEGetServiceInstance +\n" + e.getMessage());
 		}
 	}
 
@@ -305,7 +323,8 @@ public class ContainerAPIClientTestJUnit {
 			assertFalse(nodeInstances.isEmpty());
 			assertFalse(relationInstances.isEmpty());
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testFGetInstanceProperties +\n" + e.getMessage());
+			org.junit.Assert.fail(
+					"Error with " + runConfiguration + " in Mehtod testFGetInstanceProperties +\n" + e.getMessage());
 		}
 	}
 
@@ -322,7 +341,8 @@ public class ContainerAPIClientTestJUnit {
 				}
 			}
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testGTestInstanceRuns +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testGTestInstanceRuns +\n" + e.getMessage());
 		}
 	}
 
@@ -332,7 +352,8 @@ public class ContainerAPIClientTestJUnit {
 			boolean result = client.terminateServiceInstance(instance);
 			assertTrue(result);
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testHDeleteInstance +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testHDeleteInstance +\n" + e.getMessage());
 		}
 	}
 
@@ -345,7 +366,8 @@ public class ContainerAPIClientTestJUnit {
 					+ app.getInputParameters());
 			System.out.println("Metadata: \n" + app.getMetadata());
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testIGetApplication +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testIGetApplication +\n" + e.getMessage());
 		}
 	}
 
@@ -373,7 +395,8 @@ public class ContainerAPIClientTestJUnit {
 			}
 			assertFalse(foundApp);
 		} catch (Exception e) {
-			org.junit.Assert.fail("Error with " + runConfiguration + " in Mehtod testJDeleteApplication +\n" + e.getMessage());
+			org.junit.Assert
+					.fail("Error with " + runConfiguration + " in Mehtod testJDeleteApplication +\n" + e.getMessage());
 		}
 	}
 }
