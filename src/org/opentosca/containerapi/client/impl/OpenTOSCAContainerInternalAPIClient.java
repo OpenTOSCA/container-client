@@ -802,37 +802,61 @@ public abstract class OpenTOSCAContainerInternalAPIClient extends JSONAPIClient 
 
 	}
 
-	List<NodeTemplate> getNodeTemplates(Application application) {
-		QName serviceTemplateId = this.getServiceTemplateId(application);
-
-		List<NodeTemplate> nodeTemplates = new ArrayList<>();
-
-		String definitionsXmlString = this.getServiceTemplateXML(application);
-		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
-
-		try {
-			NodeList nodeTemplateElementList = this.queryNodes(definitionsRootElement,
-					"//*[local-name()='NodeTemplate']");
-
-			for (int index = 0; index < nodeTemplateElementList.getLength(); index++) {
-				if (nodeTemplateElementList.item(index).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
-					Element nodeTemplateElement = (Element) nodeTemplateElementList.item(index);
-
-					String type = nodeTemplateElement.getAttribute("type");
-					String[] typeSplit = type.split(":");
-					String prefix = typeSplit[0];
-					String localName = typeSplit[1];
-
-					String namespace = nodeTemplateElement.getAttribute("xmlns:" + prefix);
-					nodeTemplates.add(new NodeTemplate(nodeTemplateElement.getAttribute("id"), serviceTemplateId,
-							new QName(namespace, localName)));
-				}
-			}
-		} catch (XPathExpressionException e) {
-			OpenTOSCAContainerInternalAPIClient.logger.error("Filed to get node templates", e);
+	private JSONObject getNodeTemplatesJSON(Application application) {
+		JSONObject nodeTemplatesJson = this.getJSONResource(this.getMainServiceTemplateURL(application.getId())+ "/nodetemplates");		
+		return nodeTemplatesJson;
+	}
+	
+	List<NodeTemplate> getNodeTemplatesFromJSON(Application application){
+		List<NodeTemplate> nodeTemplates = new ArrayList<NodeTemplate>();
+		JSONObject nodeTemplatesJson = this.getNodeTemplatesJSON(application);
+		JSONArray nodeTemplatesJsonArray = nodeTemplatesJson.getJSONArray("node_templates");
+		
+		for(int i = 0; i < nodeTemplatesJsonArray.length(); i++) {
+			JSONObject nodeTemplateJson = nodeTemplatesJsonArray.getJSONObject(i);
+			nodeTemplates.add(NodeTemplate.Transformer.transform(this.getServiceTemplateId(application), nodeTemplateJson));
 		}
-
 		return nodeTemplates;
+	}
+	
+	List<NodeTemplate> getNodeTemplates(Application application) {
+		
+		return this.getNodeTemplatesFromJSON(application);
+//		QName serviceTemplateId = this.getServiceTemplateId(application);
+//
+//		List<NodeTemplate> nodeTemplates = new ArrayList<>();
+//
+//		
+//		
+//		String definitionsXmlString = this.getServiceTemplateXML(application);
+//		Element definitionsRootElement = this.parseStringToDom(definitionsXmlString);
+//
+//		try {
+//			NodeList nodeTemplateElementList = this.queryNodes(definitionsRootElement,
+//					"//*[local-name()='NodeTemplate']");
+//
+//			for (int index = 0; index < nodeTemplateElementList.getLength(); index++) {
+//				if (nodeTemplateElementList.item(index).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+//					Element nodeTemplateElement = (Element) nodeTemplateElementList.item(index);
+//
+//					String type = nodeTemplateElement.getAttribute("type");
+//					String[] typeSplit = type.split(":");
+//					String prefix = typeSplit[0];
+//					String localName = typeSplit[1];
+//					String namespace = nodeTemplateElement.getAttribute("xmlns:" + prefix);					
+//					QName nodeTypeId = new QName(namespace, localName);
+//					
+//					
+//					
+//					nodeTemplates.add(new NodeTemplate(nodeTemplateElement.getAttribute("id"), serviceTemplateId,
+//							nodeTypeId, new ArrayList<Interface>()));
+//				}
+//			}
+//		} catch (XPathExpressionException e) {
+//			OpenTOSCAContainerInternalAPIClient.logger.error("Filed to get node templates", e);
+//		}
+//
+//		return nodeTemplates;
 	}
 
 	QName getServiceTemplateId(String applicationId) {
