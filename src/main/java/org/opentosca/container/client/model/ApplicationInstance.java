@@ -1,14 +1,15 @@
 package org.opentosca.container.client.model;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import io.swagger.client.model.NodeTemplateInstanceDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import lombok.Builder;
 import org.joda.time.DateTime;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Builder
 public class ApplicationInstance {
@@ -16,6 +17,8 @@ public class ApplicationInstance {
     private final Application application;
 
     private final ServiceTemplateInstanceDTO serviceTemplateInstance;
+
+    private final List<NodeTemplateInstanceDTO> nodeTemplateInstances;
 
     private final List<PlanDTO> managementPlans;
 
@@ -31,6 +34,10 @@ public class ApplicationInstance {
 
     public ServiceTemplateInstanceDTO.StateEnum getState() {
         return serviceTemplateInstance.getState();
+    }
+
+    public List<NodeInstance> getNodeInstances() {
+        return nodeTemplateInstances.stream().map(NodeInstance::new).collect(Collectors.toList());
     }
 
     public List<Plan> getManagementPlans() {
@@ -55,7 +62,7 @@ public class ApplicationInstance {
     }
 
     public Application getApplication() {
-        Objects.requireNonNull(this.application);
-        return this.application;
+        Objects.requireNonNull(application);
+        return application;
     }
 }

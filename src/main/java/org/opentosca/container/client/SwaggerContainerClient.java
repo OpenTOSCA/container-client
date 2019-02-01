@@ -1,30 +1,46 @@
 package org.opentosca.container.client;
 
-import io.swagger.client.ApiException;
-import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.*;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import org.opentosca.container.client.model.Application;
-import org.opentosca.container.client.model.ApplicationInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import io.swagger.client.ApiException;
+import io.swagger.client.api.DefaultApi;
+import io.swagger.client.model.CsarDTO;
+import io.swagger.client.model.InterfaceDTO;
+import io.swagger.client.model.NodeTemplateDTO;
+import io.swagger.client.model.NodeTemplateInstanceDTO;
+import io.swagger.client.model.PlanDTO;
+import io.swagger.client.model.PlanInstanceDTO;
+import io.swagger.client.model.ServiceTemplateDTO;
+import io.swagger.client.model.ServiceTemplateInstanceDTO;
+import io.swagger.client.model.TParameter;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.ApplicationInstance;
+import org.opentosca.container.client.model.NodeInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.opentosca.container.client.Exceptions.rethrow;
 
 public class SwaggerContainerClient implements ContainerClient, ContainerClientAsync {
 
@@ -38,7 +54,6 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         this.client.getApiClient().setReadTimeout(timeout);
         this.client.getApiClient().setConnectTimeout(timeout);
     }
-
 
     // === Async
 
@@ -67,11 +82,14 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 CsarDTO csar = this.client.getCsar(id);
                 ServiceTemplateDTO serviceTemplate = this.client.getServiceTemplates(id).getServiceTemplates().get(0);
+                String serviceTemplateId = encodeValue(serviceTemplate.getId());
                 List<InterfaceDTO> interfaces = this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId())).getInterfaces();
                 PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
+                List<NodeTemplateDTO> nodeTemplates = this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
                 Application application = Application.builder()
                         .csar(csar)
                         .serviceTemplate(serviceTemplate)
+                        .nodeTemplates(nodeTemplates)
                         .buildPlan(buildPlan)
                         .interfaces(interfaces)
                         .build();
@@ -207,9 +225,22 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 ServiceTemplateInstanceDTO serviceTemplateInstance = this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
                 List<PlanDTO> plans = this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
+                List<NodeTemplateInstanceDTO> nodeTemplateInstances = new ArrayList<>();
+                application.getNodeTemplates().forEach(rethrow(nodeTemplate -> {
+                    String nodeTemplateId = encodeValue(nodeTemplate.getId());
+                    nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, csarId, serviceTemplateId, null, null)
+                            .getNodeTemplateInstances()
+                            .stream()
+                            .filter(n -> n.getServiceTemplateInstanceId().equals(serviceTemplateInstance.getId()))
+                            .collect(Collectors.toList()));
+                }));
+
+                // TODO: Resolve node properties
+
                 ApplicationInstance applicationInstance = ApplicationInstance.builder()
                         .application(application)
                         .serviceTemplateInstance(serviceTemplateInstance)
+                        .nodeTemplateInstances(nodeTemplateInstances)
                         .managementPlans(plans)
                         .build();
                 future.complete(Optional.of(applicationInstance));
@@ -253,6 +284,20 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             }
         });
         return future;
+    }
+
+    @Override
+    public CompletableFuture<Map<String, String>> executeNodeOperationAsync(NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
+        // TODO: See 'master' and implement this accordingly
+        // -> https://github.com/OpenTOSCA/container-client/blob/master/src/org/opentosca/containerapi/client/impl/OpenTOSCAContainerLegacyAPIClient.java#L617
+
+        // Use custom http client -> Client httpClient = this.client.getApiClient().getHttpClient();
+        String basePath = this.client.getApiClient().getBasePath(); // "http://localhost:1337"
+        // Extract hostname -> regex: ^https?://(.*):(.*)$
+        // Actual API endpoint -> "http://" + hostname + ":8086/ManagementBus/v1/invoker";
+        // See master...
+
+        throw new UnsupportedOperationException();
     }
 
     // === Sync
@@ -341,6 +386,16 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public boolean terminateApplicationInstance(ApplicationInstance instance) {
         try {
             return terminateApplicationInstanceAsync(instance).get();
+        } catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Map<String, String> executeNodeOperation(NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
+        try {
+            return executeNodeOperationAsync(node, interfaceName, operationName, parameters).get();
         } catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);

@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
+import org.opentosca.container.client.model.NodeInstance;
 
 public interface ContainerClientAsync {
 
@@ -29,4 +30,6 @@ public interface ContainerClientAsync {
     CompletableFuture<Optional<ApplicationInstance>> getApplicationInstanceAsync(Application application, String id);
 
     CompletableFuture<Boolean> terminateApplicationInstanceAsync(ApplicationInstance instance);
+
+    CompletableFuture<Map<String, String>> executeNodeOperationAsync(NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
 }

@@ -1,15 +1,16 @@
 package org.opentosca.container.client.model;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.swagger.client.model.CsarDTO;
 import io.swagger.client.model.InterfaceDTO;
+import io.swagger.client.model.NodeTemplateDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.ServiceTemplateDTO;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 
 @Builder
 public class Application {
@@ -17,6 +18,8 @@ public class Application {
     private final CsarDTO csar;
 
     private final ServiceTemplateDTO serviceTemplate;
+
+    private final List<NodeTemplateDTO> nodeTemplates;
 
     private final PlanDTO buildPlan;
 
@@ -36,25 +39,16 @@ public class Application {
         return new ServiceTemplate(serviceTemplate);
     }
 
+    public List<NodeTemplate> getNodeTemplates() {
+        Objects.requireNonNull(nodeTemplates);
+        return nodeTemplates.stream().map(NodeTemplate::new).collect(Collectors.toList());
+    }
+
     public Plan getBuildPlan() {
         return new Plan(buildPlan);
     }
 
     public List<PlanInstance> getBuildPlanInstances() {
         return buildPlanInstances.stream().map(PlanInstance::new).collect(Collectors.toList());
-    }
-
-    @RequiredArgsConstructor
-    public static class ServiceTemplate {
-
-        private final ServiceTemplateDTO serviceTemplate;
-
-        public String getId() {
-            return serviceTemplate.getId();
-        }
-
-        public String getName() {
-            return serviceTemplate.getName();
-        }
     }
 }
