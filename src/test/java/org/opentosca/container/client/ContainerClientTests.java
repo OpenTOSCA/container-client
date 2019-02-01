@@ -99,6 +99,14 @@ public class ContainerClientTests {
                 for (Plan plan : managementPlans) {
                     Assert.assertEquals(PlanType.MANAGEMENT, plan.getType());
                 }
+                instance.getNodeInstances().forEach(i -> {
+                    if (i.getTemplateType().equals("DockerEngine")) {
+                        Assert.assertEquals(i.getProperties().get("DockerEngineURL"), "tcp://dind:2375");
+                    }
+                    if (i.getTemplateType().equals("MyTinyToDoDockerContainer")) {
+                        Assert.assertEquals(i.getProperties().get("ContainerPort"), "80");
+                    }
+                });
             }
         }
     }

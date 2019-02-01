@@ -2,6 +2,8 @@ package org.opentosca.container.client;
 
 import java.util.concurrent.TimeUnit;
 
+import org.opentosca.container.client.impl.SwaggerContainerClient;
+
 public final class ContainerClientBuilder {
 
     private String hostname = "localhost";

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.swagger.client.model.NodeTemplateInstanceDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
@@ -18,7 +17,7 @@ public class ApplicationInstance {
 
     private final ServiceTemplateInstanceDTO serviceTemplateInstance;
 
-    private final List<NodeTemplateInstanceDTO> nodeTemplateInstances;
+    private final List<NodeInstance> nodeInstances;
 
     private final List<PlanDTO> managementPlans;
 
@@ -37,7 +36,7 @@ public class ApplicationInstance {
     }
 
     public List<NodeInstance> getNodeInstances() {
-        return nodeTemplateInstances.stream().map(NodeInstance::new).collect(Collectors.toList());
+        return nodeInstances;
     }
 
     public List<Plan> getManagementPlans() {

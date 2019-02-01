@@ -1,4 +1,4 @@
-package org.opentosca.container.client;
+package org.opentosca.container.client.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,13 +34,15 @@ import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import io.swagger.client.model.TParameter;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.opentosca.container.client.ContainerClient;
+import org.opentosca.container.client.ContainerClientAsync;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 import org.opentosca.container.client.model.NodeInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.opentosca.container.client.Exceptions.rethrow;
+import static org.opentosca.container.client.impl.Exceptions.rethrow;
 
 public class SwaggerContainerClient implements ContainerClient, ContainerClientAsync {
 
@@ -234,13 +236,15 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                             .filter(n -> n.getServiceTemplateInstanceId().equals(serviceTemplateInstance.getId()))
                             .collect(Collectors.toList()));
                 }));
-
-                // TODO: Resolve node properties
-
+                List<NodeInstance> nodeInstances = nodeTemplateInstances.stream().map(rethrow(n -> {
+                    String nodeTemplateId = encodeValue(n.getNodeTemplateId());
+                    Map<String, Object> properties = this.client.getNodeTemplateInstancePropertiesAsJson(nodeTemplateId, csarId, serviceTemplateId, n.getId());
+                    return new NodeInstance(n, properties);
+                })).collect(Collectors.toList());
                 ApplicationInstance applicationInstance = ApplicationInstance.builder()
                         .application(application)
                         .serviceTemplateInstance(serviceTemplateInstance)
-                        .nodeTemplateInstances(nodeTemplateInstances)
+                        .nodeInstances(nodeInstances)
                         .managementPlans(plans)
                         .build();
                 future.complete(Optional.of(applicationInstance));

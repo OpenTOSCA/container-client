@@ -1,4 +1,4 @@
-package org.opentosca.container.client;
+package org.opentosca.container.client.impl;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
