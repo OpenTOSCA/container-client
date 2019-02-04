@@ -1,53 +1,54 @@
 package org.opentosca.container.client.impl;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.CsarDTO;
-import io.swagger.client.model.InterfaceDTO;
-import io.swagger.client.model.NodeTemplateDTO;
-import io.swagger.client.model.NodeTemplateInstanceDTO;
-import io.swagger.client.model.PlanDTO;
-import io.swagger.client.model.PlanInstanceDTO;
-import io.swagger.client.model.ServiceTemplateDTO;
-import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import io.swagger.client.model.TParameter;
+import io.swagger.client.model.*;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.ContainerClient;
 import org.opentosca.container.client.ContainerClientAsync;
+import org.opentosca.container.client.data.JSONInvocationData;
+import org.opentosca.container.client.data.JSONParameterData;
+import org.opentosca.container.client.data.JSONRequestData;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 import org.opentosca.container.client.model.NodeInstance;
+import org.opentosca.container.client.model.ServiceTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.opentosca.container.client.impl.Exceptions.rethrow;
 
 public class SwaggerContainerClient implements ContainerClient, ContainerClientAsync {
 
     private static final Logger logger = LoggerFactory.getLogger(SwaggerContainerClient.class);
-
+    private static final String API_ENDPOINT_PROTOCOL = "http";
+    private static final String API_ENDPOINT_PORT = "8086";
+    private static final String API_ENDPOINT_URL = API_ENDPOINT_PROTOCOL + "://%s:" + API_ENDPOINT_PORT + "/ManagementBus/v1/invoker";
     private final DefaultApi client = new DefaultApi();
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -292,16 +293,49 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
 
     @Override
     public CompletableFuture<Map<String, String>> executeNodeOperationAsync(NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
-        // TODO: See 'master' and implement this accordingly
-        // -> https://github.com/OpenTOSCA/container-client/blob/master/src/org/opentosca/containerapi/client/impl/OpenTOSCAContainerLegacyAPIClient.java#L617
 
-        // Use custom http client -> Client httpClient = this.client.getApiClient().getHttpClient();
-        String basePath = this.client.getApiClient().getBasePath(); // "http://localhost:1337"
-        // Extract hostname -> regex: ^https?://(.*):(.*)$
-        // Actual API endpoint -> "http://" + hostname + ":8086/ManagementBus/v1/invoker";
-        // See master...
+        CompletableFuture<Map<String, String>> result = new CompletableFuture<>();
+        executor.submit(() -> {
+            JSONRequestData requestData = new JSONRequestData();
+            JSONInvocationData invocationData = new JSONInvocationData();
+            JSONParameterData parameterData = new JSONParameterData();
 
-        throw new UnsupportedOperationException();
+            // TODO: find correct serviceTemplate
+            ServiceTemplate serviceTemplate = null;
+
+            // TODO: set proper data
+            invocationData.setCsarID(node.getId());
+            invocationData.setServiceTemplateID(serviceTemplate.getId());
+            // invocationData.setServiceInstanceID("");
+            invocationData.setNodeTemplateID(node.getTemplate());
+            invocationData.setInterfaceName(interfaceName);
+            invocationData.setOperationName(operationName);
+
+            parameterData.setParams(parameters);
+
+            requestData.setInvocationInformation(invocationData);
+
+            // Convert data to JSON
+            ObjectMapper mapper = new ObjectMapper();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            try {
+                mapper.writeValue(outputStream, requestData);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            String json = new String(outputStream.toByteArray());
+
+            ApiClient apiClient = this.client.getApiClient();
+            Client httpClient = apiClient.getHttpClient();
+            String basePath = apiClient.getBasePath();
+            List<String> hostInfo = extractHostInfo(basePath);
+            String hostname = hostInfo.get(1);
+            // String port = hostInfo.get(2);
+            String apiEndpointUrl = String.format(API_ENDPOINT_URL, hostname);
+            WebTarget target = httpClient.target(apiEndpointUrl);
+        });
+
+        return result;
     }
 
     // === Sync
@@ -414,6 +448,20 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<String> extractHostInfo(String basePath) {
+        Pattern pattern = Pattern.compile("^(https?)://(.+):(.+)$");
+        Matcher matcher = pattern.matcher(basePath);
+        if (!matcher.matches()) {
+            throw new RuntimeException(); // TODO: find proper exception to throw
+        }
+        MatchResult matchResult = matcher.toMatchResult();
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i <= matchResult.groupCount(); i++) {
+            result.add(matchResult.group(i));
+        }
+        return result;
     }
 
     private PlanInstanceDTO waitForFinishedPlan(String plan, String instance, String csar, String serviceTemplate, Long id) {
