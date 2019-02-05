@@ -30,5 +30,5 @@ public interface ContainerClient {
 
     boolean terminateApplicationInstance(ApplicationInstance instance);
 
-    Map<String, String> executeNodeOperation(NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
+    Map<String, String> executeNodeOperation(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
 }
