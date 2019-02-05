@@ -2,6 +2,7 @@ package org.opentosca.container.client;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -100,11 +101,33 @@ public class ContainerClientTests {
                     Assert.assertEquals(PlanType.MANAGEMENT, plan.getType());
                 }
                 instance.getNodeInstances().forEach(i -> {
-                    if (i.getTemplateType().equals("DockerEngine")) {
+                    if (i.getTemplate().equals("DockerEngine")) {
                         Assert.assertEquals(i.getProperties().get("DockerEngineURL"), "tcp://dind:2375");
                     }
-                    if (i.getTemplateType().equals("MyTinyToDoDockerContainer")) {
+                    if (i.getTemplate().equals("MyTinyToDoDockerContainer")) {
                         Assert.assertEquals(i.getProperties().get("ContainerPort"), "80");
+                    }
+                });
+            }
+        }
+    }
+
+    @Test
+    public void test_45_execute_node_operation() {
+        for (Config.Test test : config.getTests()) {
+            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
+            Assert.assertEquals(1, applicationInstances.size());
+            for (ApplicationInstance instance : applicationInstances) {
+                instance.getNodeInstances().forEach(i -> {
+                    if (i.getTemplate().equals("MyTinyToDoDockerContainer")) {
+                        Map<String, String> input = new HashMap<>();
+                        input.put("Script", "ls");
+                        Map<String, String> result = client.executeNodeOperation(
+                                instance, i,
+                                "ContainerManagementInterface", "runScript",
+                                input);
+                        Assert.assertTrue(result.size() > 0);
                     }
                 });
             }

@@ -23,6 +23,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
@@ -295,6 +296,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
 
     @Override
     public CompletableFuture<Map<String, String>> executeNodeOperationAsync(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
+        ObjectMapper mapper = new ObjectMapper();
         String endpointUrlTemplate = "http://%s:8086/ManagementBus/v1/invoker";
         CompletableFuture<Map<String, String>> future = new CompletableFuture<>();
         executor.submit(() -> {
@@ -305,7 +307,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                         .data(InvocationRequest.InvocationData.builder()
                                 .csarId(csarId)
                                 .serviceTemplateId(serviceTemplateId)
-                                .serviceInstanceId(instance.getId())
+                                .serviceInstanceId("null/" + instance.getId()) // "null/" is a hack since Management Bus parses the ID awkwardly
                                 .nodeTemplateId(node.getTemplate())
                                 .interfaceName(interfaceName)
                                 .operationName(operationName)
@@ -317,6 +319,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 Client httpClient = apiClient.getHttpClient();
                 String hostname = extractHostname(apiClient.getBasePath());
                 String endpointUrl = String.format(endpointUrlTemplate, hostname);
+                logger.debug("Body: {}", mapper.writeValueAsString(requestData));
                 // Execute POST request
                 Response response = httpClient
                         .target(endpointUrl)
@@ -325,8 +328,18 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 // Check result
                 int status = response.getStatus();
                 if (status >= 200 && status < 400) {
-                    // TODO: Collect parameters from response
-                    // future.complete(...);
+                    // Poll regarding result
+                    String location = (String) response.getHeaders().getFirst("Location");
+                    InvocationResponse invocationResponse;
+                    do {
+                        Response clientResponse = httpClient
+                                .target(location)
+                                .request(MediaType.APPLICATION_JSON)
+                                .get();
+                        invocationResponse = clientResponse.readEntity(InvocationResponse.class);
+                    } while (invocationResponse.getStatus() != null && invocationResponse.getStatus().equals("PENDING"));
+                    logger.debug("Response: {}", invocationResponse);
+                    future.complete(invocationResponse.getResponse());
                 } else {
                     logger.error("HTTP response code {} while executing node operation", status);
                     future.completeExceptionally(new RuntimeException("Failed to execute node operation"));
@@ -491,6 +504,6 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         if (!matcher.matches()) {
             throw new IllegalStateException();
         }
-        return matcher.toMatchResult().group(0);
+        return matcher.toMatchResult().group(1);
     }
 }
