@@ -20,8 +20,8 @@ List<Application> applications = containerClient.getApplications();
 ```
 
 ### Upload an Application
-To upload an application, specify the path to your *.csar* file
-and call the *uploadApplication* method.
+To upload an application, specify the path to your *.csar* file and call the *uploadApplication* method.
+
 ```java
 Path applicationPath = Paths.get("MyTinyToDo_Bare_Docker.csar");
 containerClient.uploadApplication(applicationPath);
@@ -62,7 +62,23 @@ inputParameters.put("Script", "ls");
 Map<String, String> response = containerClient.executeNodeOperation(applicationInstance, nodeInstance, "ContainerManagementInterface", "runScript", inputParameters);
 ```
 
-### Access Instance Properties
+### Access Application Information
+To access further information about an application there are following options available:
+
+```java
+// The application you want to retrieve further information from.
+Application application;
+Plan buildPlan = application.getBuildPlan();
+List<PlanInstance> buildPlanInstances = application.getBuildPlanInstances();
+String id = application.getId();
+String name = application.getName();
+List<NodeTemplate> nodeTemplates = application.getNodeTemplates();
+ServiceTemplate serviceTemplate = application.getServiceTemplate();
+```
+
+### Access Application Instance Information
+To access further information about an ApplicationInstance, there are following options available:
+
 ```java
 // The applicationInstance you want to access properties from.
 ApplicationInstance applicationInstance;
@@ -74,6 +90,73 @@ List<PlanInstance> managementPlanInstances = applicationInstance.getManagementPl
 List<Plan> managementPlans = applicationInstance.getManagementPlans();
 List<NodeInstance> nodeInstances = applicationInstance.getNodeInstances();
 ServiceTemplateInstanceDTO.StateEnum state = applicationInstance.getState();
+```
+
+### Access Node Instance Information
+To access further information about any NodeInstance, there are following options available:
+
+```java
+// The NodeInstance you want to access properties from.
+NodeInstance nodeInstance;
+Map<String, String> properties = nodeInstance.getProperties();
+String template = nodeInstance.getTemplate();
+String id = nodeInstance.getId();
+NodeTemplateInstanceDTO.StateEnum state = nodeInstance.getState();
+String templateType = nodeInstance.getTemplateType();
+```
+
+### Access NodeTemplate Information
+To access further information about any NodeTemplate, there are following options available:
+
+```java
+// The NodeTemplate you want to access properties from.
+NodeTemplate nodeTemplate;
+String id = nodeTemplate.getId();
+List<InterfaceDTO> interfaces = nodeTemplate.getInterfaces();
+String name = nodeTemplate.getName();
+String nodeType = nodeTemplate.getNodeType();
+```
+
+
+### Access Plan Information
+To access further information about a Plan, there are following options available:
+
+```java
+// The plan you want to access further information from.
+Plan plan;
+String id = plan.getId();
+List<String> inputParameters = plan.getInputParameters();
+String name = plan.getName();
+PlanType type = plan.getType();
+boolean buildPlan = plan.isBuildPlan();
+boolean managementPlan = plan.isManagementPlan();
+boolean terminationPlan = plan.isTerminationPlan();
+```
+
+### Access PlanInstance Information
+
+To access further information about any PlanInstance, there are following options available:
+```java
+// The PlanInstance you want to access further information from.
+PlanInstance planInstance;
+String correlationId = planInstance.getCorrelationId();
+List<PlanInstanceInputDTO> inputs = planInstance.getInputs();
+List<PlanInstanceEventDTO> logs = planInstance.getLogs();
+Map<String, String> outputMappings = planInstance.getOutputMappings();
+Long serviceTemplateInstanceId = planInstance.getServiceTemplateInstanceId();
+PlanInstanceDTO.StateEnum state = planInstance.getState();
+PlanInstanceDTO.TypeEnum type = planInstance.getType();
+```
+
+
+### Access ServiceTemplate Information
+To access further information about any ServiceTemplate, there are following options available:
+
+```java
+// The ServiceTemplate you want to access further information from.
+ServiceTemplate serviceTemplate;
+String id = serviceTemplate.getId();
+String name = serviceTemplate.getName();
 ```
 
 ### Terminate Application Instance
