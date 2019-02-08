@@ -9,7 +9,7 @@ Part of the [OpenTOSCA Ecosystem](http://www.opentosca.org)
 ## User Guide
 
 ### Create Client and List Applications
-```
+```java
 String dockerHost = "localhost";
 Integer port = 1337;
 ContainerClient containerClient = new ContainerClientBuilder()
@@ -22,14 +22,14 @@ List<Application> applications = containerClient.getApplications();
 ### Upload an Application
 To upload an application, specify the path to your *.csar* file
 and call the *uploadApplication* method.
-```
+```java
 Path applicationPath = Paths.get("MyTinyToDo_Bare_Docker.csar");
 containerClient.uploadApplication(applicationPath);
 ```
 
 ### Provision an Application
 
-```
+```java
 // The application you want to provision.
 Application application;
 Map<String, String> inputParameters = new HashMap<>();
@@ -40,7 +40,7 @@ ApplicationInstance applicationInstance = containerClient.provisionApplication(a
 
 ### Retrieve Application Instances
 
-```
+```java
 // The application you want to retrieve application instances from.
 Application application = containerClient.getApplications().get(0);
 List<ApplicationInstance> applicationInstances = containerClient.getApplicationInstances(application);
@@ -50,7 +50,7 @@ List<ApplicationInstance> applicationInstances = containerClient.getApplicationI
 
 ### Execute Node Operation
 
-```
+```java
 // The application instance you want to execute a node operation on.
 ApplicationInstance applicationInstance;
 List<NodeInstance> nodeInstances = applicationInstance.getNodeInstances();
@@ -63,7 +63,7 @@ Map<String, String> response = containerClient.executeNodeOperation(applicationI
 ```
 
 ### Access Instance Properties
-```
+```java
 // The applicationInstance you want to access properties from.
 ApplicationInstance applicationInstance;
 Plan terminationPlan = applicationInstance.getTerminationPlan();
@@ -77,7 +77,7 @@ ServiceTemplateInstanceDTO.StateEnum state = applicationInstance.getState();
 ```
 
 ### Terminate Application Instance
-```
+```java
 // The applicationInstance you want to terminate.
 ApplicationInstance applicationInstance;
 boolean success = containerClient.terminateApplicationInstance(applicationInstance);
@@ -85,7 +85,7 @@ boolean success = containerClient.terminateApplicationInstance(applicationInstan
 
 ### Remove Application
 
-```
+```java
 // The application you want to remove.
 Application application;
 boolean success = containerClient.removeApplication(application);
