@@ -24,7 +24,7 @@ To upload an application, specify the path to your *.csar* file and call the *up
 
 ```java
 Path applicationPath = Paths.get("MyTinyToDo_Bare_Docker.csar");
-containerClient.uploadApplication(applicationPath);
+Application application = containerClient.uploadApplication(applicationPath);
 ```
 
 ### Provision an Application
