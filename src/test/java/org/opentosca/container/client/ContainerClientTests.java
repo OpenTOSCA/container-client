@@ -17,10 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
-import org.opentosca.container.client.model.Application;
-import org.opentosca.container.client.model.ApplicationInstance;
-import org.opentosca.container.client.model.Plan;
-import org.opentosca.container.client.model.PlanType;
+import org.opentosca.container.client.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -137,7 +134,17 @@ public class ContainerClientTests {
     }
 
     @Test
-    public void test_50_terminate_instance() {
+    public void test_50_get_buildplan_instances() {
+        for (Config.Test test : config.getTests()) {
+            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            List<PlanInstance> buildPlanInstances = application.getBuildPlanInstances();
+            Assert.assertNotNull(buildPlanInstances);
+            buildPlanInstances.forEach(Assert::assertNotNull);
+        }
+    }
+
+    @Test
+    public void test_60_terminate_instance() {
         for (Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
