@@ -27,15 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.CsarDTO;
-import io.swagger.client.model.InterfaceDTO;
-import io.swagger.client.model.NodeTemplateDTO;
-import io.swagger.client.model.NodeTemplateInstanceDTO;
-import io.swagger.client.model.PlanDTO;
-import io.swagger.client.model.PlanInstanceDTO;
-import io.swagger.client.model.ServiceTemplateDTO;
-import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import io.swagger.client.model.TParameter;
+import io.swagger.client.model.*;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.ContainerClient;
@@ -92,10 +84,13 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 List<InterfaceDTO> interfaces = this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId())).getInterfaces();
                 PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
                 List<NodeTemplateDTO> nodeTemplates = this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
+                PlanInstanceListDTO planInstanceList = this.client.getBuildPlanInstances(buildPlan.getId(), csar.getId(), serviceTemplateId);
+                List<PlanInstanceDTO> buildPlanInstances = planInstanceList.getPlanInstances();
                 Application application = Application.builder()
                         .csar(csar)
                         .serviceTemplate(serviceTemplate)
                         .nodeTemplates(nodeTemplates)
+                        .buildPlanInstances(buildPlanInstances)
                         .buildPlan(buildPlan)
                         .interfaces(interfaces)
                         .build();
