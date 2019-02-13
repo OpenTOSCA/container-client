@@ -42,10 +42,10 @@ ApplicationInstance applicationInstance = containerClient.provisionApplication(a
 
 ```java
 // The application you want to retrieve application instances from.
-Application application = containerClient.getApplications().get(0);
+Application application;
 List<ApplicationInstance> applicationInstances = containerClient.getApplicationInstances(application);
 // Optionally you may retrieve applications with a certain state:
-// List<ApplicationInstance> applicationInstances = containerClient.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
+List<ApplicationInstance> applicationInstances = containerClient.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
 ```
 
 ### Execute Node Operation
