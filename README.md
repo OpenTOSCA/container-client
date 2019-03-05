@@ -6,6 +6,12 @@
 
 Part of the [OpenTOSCA Ecosystem](http://www.opentosca.org)
 
+## Dev
+
+Run ``mvn generate-sources`` for generating swagger api sources and ``mvn clean package`` to build the jar
+
+Install Lombok in your IDE (https://projectlombok.org)  
+
 ## User Guide
 
 ### Create Client and List Applications
