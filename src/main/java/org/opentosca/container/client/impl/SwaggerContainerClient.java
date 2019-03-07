@@ -2,6 +2,7 @@ package org.opentosca.container.client.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -22,6 +23,10 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.client.ApiClient;
@@ -37,6 +42,8 @@ import org.opentosca.container.client.model.ApplicationInstance;
 import org.opentosca.container.client.model.NodeInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import static org.opentosca.container.client.impl.Exceptions.rethrow;
 
@@ -44,8 +51,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
 
     private static final Logger logger = LoggerFactory.getLogger(SwaggerContainerClient.class);
 
-    private final DefaultApi client = new DefaultApi();
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    protected final DefaultApi client = new DefaultApi();
+    protected final ExecutorService executor = Executors.newCachedThreadPool();
 
     public SwaggerContainerClient(final String basePath, int timeout) {
         this.client.getApiClient().setBasePath(basePath);
@@ -65,7 +72,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
                 }
                 future.complete(applications);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -81,24 +89,28 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 CsarDTO csar = this.client.getCsar(id);
                 ServiceTemplateDTO serviceTemplate = this.client.getServiceTemplates(id).getServiceTemplates().get(0);
                 String serviceTemplateId = encodeValue(serviceTemplate.getId());
-                List<InterfaceDTO> interfaces = this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId())).getInterfaces();
-                PlanDTO buildPlan = this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
-                List<NodeTemplateDTO> nodeTemplates = this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
-                PlanInstanceListDTO planInstanceList = this.client.getBuildPlanInstances(buildPlan.getId(), csar.getId(), serviceTemplateId);
+                List<InterfaceDTO> interfaces =
+                    this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId()))
+                               .getInterfaces();
+                PlanDTO buildPlan =
+                    this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
+                List<NodeTemplateDTO> nodeTemplates =
+                    this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
+                PlanInstanceListDTO planInstanceList =
+                    this.client.getBuildPlanInstances(buildPlan.getId(), csar.getId(), serviceTemplateId);
                 List<PlanInstanceDTO> buildPlanInstances = planInstanceList.getPlanInstances();
-                Application application = Application.builder()
-                        .csar(csar)
-                        .serviceTemplate(serviceTemplate)
-                        .nodeTemplates(nodeTemplates)
-                        .buildPlanInstances(buildPlanInstances)
-                        .buildPlan(buildPlan)
-                        .interfaces(interfaces)
-                        .build();
+                List<String> fileLocations = this.getApplicationContent(id);
+                Application application =
+                    Application.builder().csar(csar).serviceTemplate(serviceTemplate).nodeTemplates(nodeTemplates)
+                               .buildPlanInstances(buildPlanInstances).buildPlan(buildPlan).interfaces(interfaces)
+                               .fileLocations(fileLocations).build();
                 future.complete(Optional.of(application));
-            } catch (ApiException e) {
+            }
+            catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());
                 future.complete(Optional.empty());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -120,19 +132,19 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 Client httpClient = this.client.getApiClient().getHttpClient();
                 FormDataMultiPart formData = new FormDataMultiPart();
                 formData.bodyPart(new FileDataBodyPart("file", file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
-                Response response = httpClient
-                        .target(this.client.getApiClient().getBasePath() + "/csars")
-                        .request()
-                        .post(Entity.entity(formData, formData.getMediaType()));
+                Response response = httpClient.target(this.client.getApiClient().getBasePath() + "/csars").request()
+                                              .post(Entity.entity(formData, formData.getMediaType()));
 
                 int status = response.getStatus();
                 if (status >= 200 && status < 400) {
                     future.complete(getApplication(file.getName()).orElseThrow(IllegalStateException::new));
                 } else {
                     logger.error("HTTP response code {} while uploading file", status);
-                    future.completeExceptionally(new RuntimeException("Failed to upload file: " + file.getAbsolutePath()));
+                    future.completeExceptionally(new RuntimeException(
+                        "Failed to upload file: " + file.getAbsolutePath()));
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -147,10 +159,12 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 this.client.deleteCsar(application.getId());
                 future.complete(true);
-            } catch (ApiException e) {
+            }
+            catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());
                 future.complete(false);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -159,7 +173,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     }
 
     @Override
-    public CompletableFuture<ApplicationInstance> provisionApplicationAsync(Application application, Map<String, String> inputParameters) {
+    public CompletableFuture<ApplicationInstance> provisionApplicationAsync(Application application,
+                                                                            Map<String, String> inputParameters) {
         CompletableFuture<ApplicationInstance> future = new CompletableFuture<>();
         executor.submit(() -> {
             try {
@@ -180,10 +195,12 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 if (pi == null) {
                     throw new RuntimeException("Could not determine plan instance");
                 }
-                ApplicationInstance i = getApplicationInstance(application, pi.getServiceTemplateInstanceId().toString())
-                        .orElseThrow(IllegalStateException::new);
+                ApplicationInstance i =
+                    getApplicationInstance(application, pi.getServiceTemplateInstanceId()
+                                                          .toString()).orElseThrow(IllegalStateException::new);
                 future.complete(i);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -197,7 +214,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     }
 
     @Override
-    public CompletableFuture<List<ApplicationInstance>> getApplicationInstancesAsync(Application application, ServiceTemplateInstanceDTO.StateEnum... state) {
+    public CompletableFuture<List<ApplicationInstance>> getApplicationInstancesAsync(Application application,
+                                                                                     ServiceTemplateInstanceDTO.StateEnum... state) {
         List<ServiceTemplateInstanceDTO.StateEnum> validStates = Arrays.asList(state);
         CompletableFuture<List<ApplicationInstance>> future = new CompletableFuture<>();
         executor.submit(() -> {
@@ -205,11 +223,16 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 String csarId = application.getId();
                 String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
-                for (ServiceTemplateInstanceDTO dto : this.client.getServiceTemplateInstances(csarId, serviceTemplateId).getServiceTemplateInstances()) {
-                    applicationInstances.add(getApplicationInstance(application, dto.getId().toString()).orElseThrow(IllegalStateException::new));
+                for (ServiceTemplateInstanceDTO dto : this.client.getServiceTemplateInstances(csarId, serviceTemplateId)
+                                                                 .getServiceTemplateInstances()) {
+                    applicationInstances.add(getApplicationInstance(application,
+                                                                    dto.getId().toString())
+                                                                                           .orElseThrow(IllegalStateException::new));
                 }
-                future.complete(applicationInstances.stream().filter(a -> validStates.contains(a.getState())).collect(Collectors.toList()));
-            } catch (Exception e) {
+                future.complete(applicationInstances.stream().filter(a -> validStates.contains(a.getState()))
+                                                    .collect(Collectors.toList()));
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -218,39 +241,45 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     }
 
     @Override
-    public CompletableFuture<Optional<ApplicationInstance>> getApplicationInstanceAsync(Application application, String id) {
+    public CompletableFuture<Optional<ApplicationInstance>> getApplicationInstanceAsync(Application application,
+                                                                                        String id) {
         CompletableFuture<Optional<ApplicationInstance>> future = new CompletableFuture<>();
         executor.submit(() -> {
             String csarId = application.getId();
             String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
             try {
-                ServiceTemplateInstanceDTO serviceTemplateInstance = this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
-                List<PlanDTO> plans = this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
+                ServiceTemplateInstanceDTO serviceTemplateInstance =
+                    this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
+                List<PlanDTO> plans =
+                    this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
                 List<NodeTemplateInstanceDTO> nodeTemplateInstances = new ArrayList<>();
                 application.getNodeTemplates().forEach(rethrow(nodeTemplate -> {
                     String nodeTemplateId = encodeValue(nodeTemplate.getId());
-                    nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, csarId, serviceTemplateId, null, null)
-                            .getNodeTemplateInstances()
-                            .stream()
-                            .filter(n -> n.getServiceTemplateInstanceId().equals(serviceTemplateInstance.getId()))
-                            .collect(Collectors.toList()));
+                    nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, csarId,
+                                                                                      serviceTemplateId, null, null)
+                                                            .getNodeTemplateInstances().stream()
+                                                            .filter(n -> n.getServiceTemplateInstanceId()
+                                                                          .equals(serviceTemplateInstance.getId()))
+                                                            .collect(Collectors.toList()));
                 }));
                 List<NodeInstance> nodeInstances = nodeTemplateInstances.stream().map(rethrow(n -> {
                     String nodeTemplateId = encodeValue(n.getNodeTemplateId());
-                    Map<String, Object> properties = this.client.getNodeTemplateInstancePropertiesAsJson(nodeTemplateId, csarId, serviceTemplateId, n.getId());
+                    Map<String, Object> properties =
+                        this.client.getNodeTemplateInstancePropertiesAsJson(nodeTemplateId, csarId, serviceTemplateId,
+                                                                            n.getId());
                     return new NodeInstance(n, properties);
                 })).collect(Collectors.toList());
-                ApplicationInstance applicationInstance = ApplicationInstance.builder()
-                        .application(application)
-                        .serviceTemplateInstance(serviceTemplateInstance)
-                        .nodeInstances(nodeInstances)
-                        .managementPlans(plans)
-                        .build();
+                ApplicationInstance applicationInstance =
+                    ApplicationInstance.builder().application(application)
+                                       .serviceTemplateInstance(serviceTemplateInstance).nodeInstances(nodeInstances)
+                                       .managementPlans(plans).build();
                 future.complete(Optional.of(applicationInstance));
-            } catch (ApiException e) {
+            }
+            catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());
                 future.complete(Optional.empty());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -269,19 +298,22 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
                 Long id = Long.valueOf(instance.getId());
 
-                String correlationId = this.client.invokeManagementPlan(planId, new ArrayList<>(), csarId, serviceTemplateId, id);
+                String correlationId =
+                    this.client.invokeManagementPlan(planId, new ArrayList<>(), csarId, serviceTemplateId, id);
                 PlanInstanceDTO pi = waitForFinishedPlan(planId, correlationId, csarId, serviceTemplateId, id);
                 if (pi == null) {
                     throw new RuntimeException("Could not determine plan instance");
                 }
-                ApplicationInstance i = getApplicationInstance(application, pi.getServiceTemplateInstanceId().toString())
-                        .orElseThrow(IllegalStateException::new);
+                ApplicationInstance i =
+                    getApplicationInstance(application, pi.getServiceTemplateInstanceId()
+                                                          .toString()).orElseThrow(IllegalStateException::new);
                 if (i.getState().equals(ServiceTemplateInstanceDTO.StateEnum.DELETED)) {
                     future.complete(true);
                 } else {
                     future.complete(false);
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -290,7 +322,10 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     }
 
     @Override
-    public CompletableFuture<Map<String, String>> executeNodeOperationAsync(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
+    public CompletableFuture<Map<String, String>> executeNodeOperationAsync(ApplicationInstance instance,
+                                                                            NodeInstance node, String interfaceName,
+                                                                            String operationName,
+                                                                            Map<String, String> parameters) {
         ObjectMapper mapper = new ObjectMapper();
         String endpointUrlTemplate = "http://%s:8086/ManagementBus/v1/invoker";
         CompletableFuture<Map<String, String>> future = new CompletableFuture<>();
@@ -298,17 +333,17 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 String csarId = instance.getApplication().getId();
                 String serviceTemplateId = instance.getApplication().getServiceTemplate().getId();
-                InvocationRequest requestData = InvocationRequest.builder()
-                        .data(InvocationRequest.InvocationData.builder()
-                                .csarId(csarId)
-                                .serviceTemplateId(serviceTemplateId)
-                                .serviceInstanceId("null/" + instance.getId()) // "null/" is a hack since Management Bus parses the ID awkwardly
-                                .nodeTemplateId(node.getTemplate())
-                                .interfaceName(interfaceName)
-                                .operationName(operationName)
-                                .build())
-                        .parameters(parameters)
-                        .build();
+                // "null/" is a hack since Management Bus parses the ID awkwardly
+                InvocationRequest requestData =
+                    InvocationRequest.builder()
+                                     .data(InvocationRequest.InvocationData.builder().csarId(csarId)
+                                                                           .serviceTemplateId(serviceTemplateId)
+                                                                           .serviceInstanceId("null/"
+                                                                               + instance.getId())
+                                                                           .nodeTemplateId(node.getTemplate())
+                                                                           .interfaceName(interfaceName)
+                                                                           .operationName(operationName).build())
+                                     .parameters(parameters).build();
                 // Create HTTP client
                 ApiClient apiClient = this.client.getApiClient();
                 Client httpClient = apiClient.getHttpClient();
@@ -316,10 +351,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 String endpointUrl = String.format(endpointUrlTemplate, hostname);
                 logger.debug("Body: {}", mapper.writeValueAsString(requestData));
                 // Execute POST request
-                Response response = httpClient
-                        .target(endpointUrl)
-                        .request(MediaType.APPLICATION_JSON)
-                        .post(Entity.entity(requestData, MediaType.APPLICATION_JSON));
+                Response response = httpClient.target(endpointUrl).request(MediaType.APPLICATION_JSON)
+                                              .post(Entity.entity(requestData, MediaType.APPLICATION_JSON));
                 // Check result
                 int status = response.getStatus();
                 if (status >= 200 && status < 400) {
@@ -327,19 +360,18 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     String location = (String) response.getHeaders().getFirst("Location");
                     InvocationResponse invocationResponse;
                     do {
-                        Response clientResponse = httpClient
-                                .target(location)
-                                .request(MediaType.APPLICATION_JSON)
-                                .get();
+                        Response clientResponse = httpClient.target(location).request(MediaType.APPLICATION_JSON).get();
                         invocationResponse = clientResponse.readEntity(InvocationResponse.class);
-                    } while (invocationResponse.getStatus() != null && invocationResponse.getStatus().equals("PENDING"));
+                    } while (invocationResponse.getStatus() != null
+                        && invocationResponse.getStatus().equals("PENDING"));
                     logger.debug("Response: {}", invocationResponse);
                     future.complete(invocationResponse.getResponse());
                 } else {
                     logger.error("HTTP response code {} while executing node operation", status);
                     future.completeExceptionally(new RuntimeException("Failed to execute node operation"));
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing request", e);
                 future.completeExceptionally(e);
             }
@@ -353,7 +385,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public List<Application> getApplications() {
         try {
             return getApplicationsAsync().get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -363,7 +396,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public Optional<Application> getApplication(String id) {
         try {
             return getApplicationAsync(id).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -373,7 +407,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public Application uploadApplication(Path path) {
         try {
             return uploadApplicationAsync(path).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -383,7 +418,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public boolean removeApplication(Application application) {
         try {
             return removeApplicationAsync(application).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -393,7 +429,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public ApplicationInstance provisionApplication(Application application, Map<String, String> inputParameters) {
         try {
             return provisionApplicationAsync(application, inputParameters).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -403,17 +440,20 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public List<ApplicationInstance> getApplicationInstances(Application application) {
         try {
             return getApplicationInstancesAsync(application).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public List<ApplicationInstance> getApplicationInstances(Application application, ServiceTemplateInstanceDTO.StateEnum... state) {
+    public List<ApplicationInstance> getApplicationInstances(Application application,
+                                                             ServiceTemplateInstanceDTO.StateEnum... state) {
         try {
             return getApplicationInstancesAsync(application, state).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -423,7 +463,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public Optional<ApplicationInstance> getApplicationInstance(Application application, String id) {
         try {
             return getApplicationInstanceAsync(application, id).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -433,17 +474,21 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     public boolean terminateApplicationInstance(ApplicationInstance instance) {
         try {
             return terminateApplicationInstanceAsync(instance).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Map<String, String> executeNodeOperation(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters) {
+    public Map<String, String> executeNodeOperation(ApplicationInstance instance, NodeInstance node,
+                                                    String interfaceName, String operationName,
+                                                    Map<String, String> parameters) {
         try {
             return executeNodeOperationAsync(instance, node, interfaceName, operationName, parameters).get();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);
         }
@@ -454,12 +499,48 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     private String encodeValue(String value) {
         try {
             return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private PlanInstanceDTO waitForFinishedPlan(String plan, String instance, String csar, String serviceTemplate, Long id) {
+
+    private List<String> getApplicationContent(String id) {
+        try {
+            return getApplicationContentAsync(id).get();
+        }
+        catch (Exception e) {
+            logger.error("Error while waiting for future to be completed");
+            throw new RuntimeException(e);
+        }
+    }
+
+    private CompletableFuture<List<String>> getApplicationContentAsync(String id) {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                Client httpClient = this.client.getApiClient().getHttpClient();
+                Response response = httpClient.target(this.getCSARContentUrl(id) + "?recursive").request()
+                                              .header("Accept", "application/xml").get();
+                int status = response.getStatus();
+                if (status >= 200 && status < 400) {
+                    future.complete(this.getFileLocations(response.readEntity(String.class)));
+                } else {
+                    logger.error("HTTP response code {} while requesting application content", status);
+                    future.completeExceptionally(new RuntimeException("Failed to request application content: " + id));
+                }
+            }
+            catch (Exception e) {
+                logger.error("Error executing request", e);
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    private PlanInstanceDTO waitForFinishedPlan(String plan, String instance, String csar, String serviceTemplate,
+                                                Long id) {
         PlanInstanceDTO pi = null;
         final long sleep = 5000;
         final long timeout = TimeUnit.MINUTES.toMillis(10);
@@ -473,7 +554,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     pi = this.client.getManagementPlanInstance(plan, instance, csar, serviceTemplate, id);
                 }
                 finished = pi.getState().equals(PlanInstanceDTO.StateEnum.FINISHED);
-            } catch (final Exception e) {
+            }
+            catch (final Exception e) {
                 finished = false;
             }
             if (finished) {
@@ -485,7 +567,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             }
             try {
                 Thread.sleep(sleep);
-            } catch (final InterruptedException e) {
+            }
+            catch (final InterruptedException e) {
                 // Ignore
             }
             waited += sleep;
@@ -500,5 +583,26 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             throw new IllegalStateException();
         }
         return matcher.toMatchResult().group(1);
+    }
+
+    private String getCSARUrl(String applicationId) {
+        return this.client.getApiClient().getBasePath() + "/csars/" + applicationId;
+    }
+
+    private String getCSARContentUrl(String applicationId) {
+        return this.getCSARUrl(applicationId) + "/content";
+    }
+
+    // probably better to extend the swagger description an generate the stuff by the code generator
+    private List<String> getFileLocations(String contentResponse) throws XPathExpressionException {
+        List<String> locations = new ArrayList<String>();
+        XPath xpath = XPathFactory.newInstance().newXPath();
+        NodeList nodes =
+            (NodeList) xpath.evaluate("//*[local-name()='Link']/@*[local-name()='href']",
+                                      new InputSource(new StringReader(contentResponse)), XPathConstants.NODESET);
+        for (int i = 0; i < nodes.getLength(); i++) {
+            locations.add(nodes.item(i).getTextContent());
+        }
+        return locations;
     }
 }
