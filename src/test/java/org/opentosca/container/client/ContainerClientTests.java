@@ -7,35 +7,29 @@ import java.util.List;
 import java.util.Map;
 
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
-import org.opentosca.container.client.model.*;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.ApplicationInstance;
+import org.opentosca.container.client.model.Plan;
+import org.opentosca.container.client.model.PlanInstance;
+import org.opentosca.container.client.model.PlanType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@Ignore
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@SpringBootApplication
-@EnableConfigurationProperties(ContainerClientTests.Config.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ContainerClientTests {
 
     @Autowired
-    private ContainerClientTests.Config config;
+    private ClientTests.Config config;
 
     private ContainerClient client;
 
@@ -63,7 +57,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_20_upload() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Assert.assertFalse(client.getApplication(test.getName()).isPresent());
             Path path = Paths.get(config.getPath(), test.getName());
             Application application = client.uploadApplication(path);
@@ -75,7 +69,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_30_provision_application() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             Assert.assertEquals(0, client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED).size());
             int startSize = client.getApplicationInstances(application).size();
@@ -89,7 +83,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_40_get_application_instances() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
@@ -113,7 +107,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_45_execute_node_operation() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
@@ -135,7 +129,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_50_get_buildplan_instances() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<PlanInstance> buildPlanInstances = application.getBuildPlanInstances();
             Assert.assertNotNull(buildPlanInstances);
@@ -145,7 +139,7 @@ public class ContainerClientTests {
 
     @Test
     public void test_60_terminate_instance() {
-        for (Config.Test test : config.getTests()) {
+        for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
@@ -161,27 +155,5 @@ public class ContainerClientTests {
             Assert.assertTrue(client.removeApplication(application));
         }
         Assert.assertEquals(0, client.getApplications().size());
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(ContainerClientTests.class, args);
-    }
-
-    @Setter
-    @Getter
-    @ConfigurationProperties(prefix = "csar")
-    static class Config {
-
-        private String hostname;
-        private String path;
-        private List<Test> tests;
-
-        @Setter
-        @Getter
-        static class Test {
-
-            private String name;
-            private Map<String, String> input;
-        }
     }
 }

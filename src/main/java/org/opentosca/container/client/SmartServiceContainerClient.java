@@ -5,6 +5,6 @@ import org.opentosca.container.client.impl.SmartServiceSwaggerContainerClient.No
 import org.opentosca.container.client.model.Application;
 
 public interface SmartServiceContainerClient extends ContainerClient {
-	
-	public JSONObject getSmartServiceDescription(Application app) throws NoSmartServiceException;
+
+    public JSONObject getSmartServiceDescription(Application app) throws NoSmartServiceException;
 }

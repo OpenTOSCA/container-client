@@ -7,6 +7,5 @@ import org.opentosca.container.client.model.Application;
 
 public interface SmartServiceContainerClientAsync extends ContainerClientAsync {
 
-	public CompletableFuture<JSONObject> getSmartServiceDescriptionAsync(Application app);
-	
+    public CompletableFuture<JSONObject> getSmartServiceDescriptionAsync(Application app);
 }

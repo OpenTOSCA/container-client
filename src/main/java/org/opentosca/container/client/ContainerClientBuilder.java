@@ -45,12 +45,12 @@ public final class ContainerClientBuilder {
     public ContainerClientAsync buildAsync() {
         return new SwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
     }
-    
+
     public SmartServiceContainerClient buildSmart() {
-    	return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
+        return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
     }
-    
+
     public SmartServiceContainerClientAsync buildSmartAsync() {
-    	return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
+        return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
     }
 }

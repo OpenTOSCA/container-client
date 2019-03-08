@@ -26,7 +26,7 @@ public class Application {
     private final List<PlanInstanceDTO> buildPlanInstances;
 
     private final List<InterfaceDTO> interfaces;
-    
+
     private final List<String> fileLocations;
 
     public String getId() {
@@ -34,23 +34,23 @@ public class Application {
     }
 
     public String getVersion() {
-    	return csar.getVersion();
+        return csar.getVersion();
     }
-    
+
     public List<String> getAuthors() {
-    	return csar.getAuthors();
+        return csar.getAuthors();
     }
-    
+
     public String getName() {
         return csar.getName();
     }
-    
+
     public String getDisplayName() {
-    	return this.csar.getDisplayName();
+        return this.csar.getDisplayName();
     }
-    
+
     public String getDescription() {
-    	return this.csar.getDescription();
+        return this.csar.getDescription();
     }
 
     public ServiceTemplate getServiceTemplate() {
@@ -69,13 +69,12 @@ public class Application {
     public List<PlanInstance> getBuildPlanInstances() {
         return buildPlanInstances.stream().map(PlanInstance::new).collect(Collectors.toList());
     }
-    
+
     public List<Interface> getInterfaces() {
-    	return this.interfaces.stream().map(x -> new Interface(x)).collect(Collectors.toList());
+        return this.interfaces.stream().map(Interface::new).collect(Collectors.toList());
     }
-    
+
     public List<String> getFileLocations() {
-    	return this.fileLocations;
+        return this.fileLocations;
     }
-    
 }
