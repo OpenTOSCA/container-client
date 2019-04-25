@@ -16,9 +16,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
+import org.opentosca.container.client.model.BoundaryDefinitionProperties;
 import org.opentosca.container.client.model.Plan;
 import org.opentosca.container.client.model.PlanInstance;
 import org.opentosca.container.client.model.PlanType;
+import org.opentosca.container.client.model.PropertyMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -65,6 +67,23 @@ public class ContainerClientTests {
         }
         List<Application> applications = client.getApplications();
         Assert.assertEquals(config.getTests().size(), applications.size());
+    }
+
+    @Test
+    public void test_21_getBoundaryDefinitionProperties() {
+        for (ClientTests.Config.Test test : config.getTests()) {
+            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            BoundaryDefinitionProperties properties = application.getBoundaryDefinitionProperties();
+            Assert.assertNotNull(properties);
+            Assert.assertNotNull(properties.getXMLFragment());
+            List<PropertyMapping> mappings = properties.getPropertyMappings();
+            Assert.assertNotNull(mappings);
+            mappings.forEach(mapping -> {
+                Assert.assertNotNull(mapping.getServiceTemplatePropertyRef());
+                Assert.assertNotNull(mapping.getTargetObjectRef());
+                Assert.assertNotNull(mapping.getTargetPropertyRef());
+            });
+        }
     }
 
     @Test
