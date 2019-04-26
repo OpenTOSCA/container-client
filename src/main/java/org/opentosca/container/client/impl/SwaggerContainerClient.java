@@ -260,6 +260,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 ServiceTemplateInstanceDTO serviceTemplateInstance =
                         this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
+                Map<String, Object> serviceTemplateInstanceProps =
+                        this.client.getServiceTemplateInstancePropertiesAsJSON(csarId, serviceTemplateId, Long.valueOf(id));
                 List<PlanDTO> plans =
                         this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
                 List<NodeTemplateInstanceDTO> nodeTemplateInstances = new ArrayList<>();
@@ -280,9 +282,13 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     return new NodeInstance(n, properties);
                 })).collect(Collectors.toList());
                 ApplicationInstance applicationInstance =
-                        ApplicationInstance.builder().application(application)
-                                .serviceTemplateInstance(serviceTemplateInstance).nodeInstances(nodeInstances)
-                                .managementPlans(plans).build();
+                        ApplicationInstance.builder()
+                                .application(application)
+                                .properties(serviceTemplateInstanceProps)
+                                .serviceTemplateInstance(serviceTemplateInstance)
+                                .nodeInstances(nodeInstances)
+                                .managementPlans(plans)
+                                .build();
                 future.complete(Optional.of(applicationInstance));
             } catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());

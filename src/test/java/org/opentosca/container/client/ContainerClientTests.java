@@ -70,7 +70,7 @@ public class ContainerClientTests {
     }
 
     @Test
-    public void test_21_getBoundaryDefinitionProperties() {
+    public void test_21_get_boundary_definition_properties() {
         for (ClientTests.Config.Test test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             BoundaryDefinitionProperties properties = application.getBoundaryDefinitionProperties();
@@ -120,6 +120,21 @@ public class ContainerClientTests {
                         Assert.assertEquals(i.getProperties().get("ContainerPort"), "80");
                     }
                 });
+            }
+        }
+    }
+
+    @Test
+    public void test_41_get_service_template_instance_properties() {
+        for (ClientTests.Config.Test test : config.getTests()) {
+            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
+            Assert.assertTrue(applicationInstances.size() > 0);
+
+            for (ApplicationInstance instance : applicationInstances) {
+                Map<String,String> result = instance.getProperties();
+                Assert.assertNotNull(result);
+                Assert.assertTrue(result.size() > 0);
             }
         }
     }
