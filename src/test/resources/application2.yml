@@ -1,4 +1,4 @@
-_csar:
+csar:
   hostname: localhost
   path: c:/temp
   tests:
