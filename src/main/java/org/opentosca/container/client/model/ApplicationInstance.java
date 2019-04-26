@@ -1,6 +1,7 @@
 package org.opentosca.container.client.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -16,6 +17,8 @@ public class ApplicationInstance {
     private final Application application;
 
     private final ServiceTemplateInstanceDTO serviceTemplateInstance;
+
+    private final Map<String, Object> properties;
 
     private final List<NodeInstance> nodeInstances;
 
@@ -58,6 +61,18 @@ public class ApplicationInstance {
                 .map(Plan::new)
                 .filter(Plan::isTerminationPlan)
                 .findFirst().orElseThrow(IllegalStateException::new);
+    }
+
+    public Map<String, String> getProperties() {
+        return properties.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() == null ? "" : e.getValue().toString()));
+    }
+
+    public String getProperty(String propertyKey) {
+        Object value = properties.get(propertyKey);
+
+        return value == null ? null : value.toString();
     }
 
     public Application getApplication() {

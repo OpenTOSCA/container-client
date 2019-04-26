@@ -39,6 +39,7 @@ import io.swagger.client.model.NodeTemplateInstanceDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.PlanInstanceListDTO;
+import io.swagger.client.model.PropertiesDTO;
 import io.swagger.client.model.ServiceTemplateDTO;
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import io.swagger.client.model.TParameter;
@@ -98,10 +99,11 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 ServiceTemplateDTO serviceTemplate = this.client.getServiceTemplates(id).getServiceTemplates().get(0);
                 String serviceTemplateId = encodeValue(serviceTemplate.getId());
                 List<InterfaceDTO> interfaces =
-                        this.client.getBoundaryDefinitionInterfaces(csar.getId(), encodeValue(serviceTemplate.getId()))
+                        this.client.getBoundaryDefinitionInterfaces(csar.getId(), serviceTemplateId)
                                 .getInterfaces();
                 PlanDTO buildPlan =
-                        this.client.getBuildPlans(csar.getId(), encodeValue(serviceTemplate.getId())).getPlans().get(0);
+                        this.client.getBuildPlans(csar.getId(), serviceTemplateId).getPlans().get(0);
+                PropertiesDTO boundaryProperties = this.client.getBoundaryDefinitionProperties(csar.getId(), serviceTemplateId);
                 List<NodeTemplateDTO> nodeTemplates =
                         this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
                 PlanInstanceListDTO planInstanceList =
@@ -109,9 +111,16 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 List<PlanInstanceDTO> buildPlanInstances = planInstanceList.getPlanInstances();
                 List<String> fileLocations = this.getApplicationContent(id);
                 Application application =
-                        Application.builder().csar(csar).serviceTemplate(serviceTemplate).nodeTemplates(nodeTemplates)
-                                .buildPlanInstances(buildPlanInstances).buildPlan(buildPlan).interfaces(interfaces)
-                                .fileLocations(fileLocations).build();
+                        Application.builder()
+                                .csar(csar)
+                                .serviceTemplate(serviceTemplate)
+                                .nodeTemplates(nodeTemplates)
+                                .buildPlanInstances(buildPlanInstances)
+                                .buildPlan(buildPlan)
+                                .interfaces(interfaces)
+                                .boundaryDefinitionProperties(boundaryProperties)
+                                .fileLocations(fileLocations)
+                                .build();
                 future.complete(Optional.of(application));
             } catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());
@@ -251,6 +260,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 ServiceTemplateInstanceDTO serviceTemplateInstance =
                         this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
+                Map<String, Object> serviceTemplateInstanceProps =
+                        this.client.getServiceTemplateInstancePropertiesAsJSON(csarId, serviceTemplateId, Long.valueOf(id));
                 List<PlanDTO> plans =
                         this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
                 List<NodeTemplateInstanceDTO> nodeTemplateInstances = new ArrayList<>();
@@ -271,9 +282,13 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     return new NodeInstance(n, properties);
                 })).collect(Collectors.toList());
                 ApplicationInstance applicationInstance =
-                        ApplicationInstance.builder().application(application)
-                                .serviceTemplateInstance(serviceTemplateInstance).nodeInstances(nodeInstances)
-                                .managementPlans(plans).build();
+                        ApplicationInstance.builder()
+                                .application(application)
+                                .properties(serviceTemplateInstanceProps)
+                                .serviceTemplateInstance(serviceTemplateInstance)
+                                .nodeInstances(nodeInstances)
+                                .managementPlans(plans)
+                                .build();
                 future.complete(Optional.of(applicationInstance));
             } catch (ApiException e) {
                 logger.error("HTTP response code {} while executing request", e.getCode());

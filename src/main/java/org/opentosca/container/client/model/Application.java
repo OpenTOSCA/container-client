@@ -9,6 +9,7 @@ import io.swagger.client.model.InterfaceDTO;
 import io.swagger.client.model.NodeTemplateDTO;
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
+import io.swagger.client.model.PropertiesDTO;
 import io.swagger.client.model.ServiceTemplateDTO;
 import lombok.Builder;
 
@@ -28,6 +29,8 @@ public class Application {
     private final List<InterfaceDTO> interfaces;
 
     private final List<String> fileLocations;
+
+    private final PropertiesDTO boundaryDefinitionProperties;
 
     public String getId() {
         return csar.getId();
@@ -76,5 +79,9 @@ public class Application {
 
     public List<String> getFileLocations() {
         return this.fileLocations;
+    }
+
+    public BoundaryDefinitionProperties getBoundaryDefinitionProperties() {
+        return new BoundaryDefinitionProperties(this.boundaryDefinitionProperties);
     }
 }
