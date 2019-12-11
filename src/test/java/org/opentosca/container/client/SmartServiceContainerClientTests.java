@@ -1,7 +1,11 @@
 package org.opentosca.container.client;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +19,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.junit.runners.Parameterized;
 import org.opentosca.container.client.impl.SmartServiceSwaggerContainerClient.NoSmartServiceException;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
@@ -24,21 +29,43 @@ import org.opentosca.container.client.model.PlanType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
+@RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SmartServiceContainerClientTests {
 
-    @Autowired
-    private ClientTests.Config config;
+    @Parameterized.Parameter(0)
+    public Testfiles config;
 
     private SmartServiceContainerClient client;
+    //retrieves the ipaddress which is defined in the dockerfile of the tests project
+    String ipAdress=System.getProperty("ipaddress");
+    String csarsPath="/var/opentosca/csars/";
+    //import all yaml configurations located in the resources folder
+    @Parameterized.Parameters
+    public static Iterable<Testfiles> data(){
+        File dir = new File("src/test/resources");
+        File[] directoryListing= dir.listFiles();
+        List<Testfiles> list = new ArrayList<>();
+        for(File child: directoryListing){
+            Yaml yaml = new Yaml(new Constructor(Testfiles.class));
+            try(InputStream in = Files.newInputStream(Paths.get(child.getAbsolutePath()))){
+        Testfiles tempconfig= yaml.load(in);
+        list.add(tempconfig);
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        return list;
+    }
 
     @Before
     public void before() {
         this.client = ContainerClientBuilder.builder()
-                .withHostname(config.getHostname())
+                .withHostname(ipAdress)
                 .buildSmart();
         // Only run tests if OpenTOSCA ecosystem is up and running ;-)
         try {
@@ -59,9 +86,9 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_20_upload() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Assert.assertFalse(client.getApplication(test.getName()).isPresent());
-            Path path = Paths.get(config.getPath(), test.getName());
+            Path path = Paths.get(csarsPath, test.getName());
             Application application = client.uploadApplication(path);
             Assert.assertEquals(test.getName(), application.getId());
             try {
@@ -77,7 +104,7 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_30_provision_application() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             Assert.assertEquals(0, client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED).size());
             int startSize = client.getApplicationInstances(application).size();
@@ -91,7 +118,7 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_40_get_application_instances() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
@@ -115,7 +142,7 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_45_execute_node_operation() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
@@ -137,7 +164,7 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_50_get_buildplan_instances() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<PlanInstance> buildPlanInstances = application.getBuildPlanInstances();
             Assert.assertNotNull(buildPlanInstances);
@@ -147,7 +174,7 @@ public class SmartServiceContainerClientTests {
 
     @Test
     public void test_60_terminate_instance() {
-        for (ClientTests.Config.Test test : config.getTests()) {
+        for (CSARTest test : config.getTests()) {
             Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());

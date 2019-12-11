@@ -1,6 +1,3 @@
-csar:
-  hostname: localhost
-  path: c:/temp
   tests:
     - name: MyTinyToDo_Bare_Docker.csar
       input:
