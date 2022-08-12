@@ -1,12 +1,17 @@
 package org.opentosca.container.client;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.winery.accountability.exceptions.AccountabilityException;
+import org.eclipse.winery.repository.exceptions.RepositoryCorruptException;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -25,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.xml.namespace.QName;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -35,8 +42,15 @@ public class ContainerClientTests {
 
     private ContainerClient client;
 
+    public static final String TESTAPPLICATIONSREPOSITORY = "https://github.com/OpenTOSCA/tosca-definitions-test-applications";
+    public QName csarId = new QName("http://opentosca.org/test/applications/servicetemplates", "MyTinyToDo-DockerEngine-Test_w1-wip1");
+
+    private TestUtils testUtils = new TestUtils();
+
+    private Path csarPath;
+
     @Before
-    public void before() {
+    public void before() throws GitAPIException, AccountabilityException, RepositoryCorruptException, IOException, ExecutionException, InterruptedException {
         this.client = ContainerClientBuilder.builder()
                 .withHostname(config.getHostname())
                 .build();
@@ -46,6 +60,9 @@ public class ContainerClientTests {
         } catch (Exception e) {
             Assume.assumeNoException(e);
         }
+
+
+        this.csarPath = testUtils.fetchCsar(TESTAPPLICATIONSREPOSITORY, csarId);
     }
 
     @Test

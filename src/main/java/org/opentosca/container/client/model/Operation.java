@@ -13,7 +13,15 @@ public class Operation {
     private final OperationDTO operation;
 
     public String getName() {
-        return this.operation.getName();
+       if (this.operation.getNodeOperation() != null) {
+           return this.operation.getNodeOperation().getName();
+       } else if (this.operation.getRelationshipOperation() != null) {
+           return this.operation.getRelationshipOperation().getOperationName();
+       } else if (this.operation.getPlan() != null) {
+           return this.operation.getPlan().getName();
+       } else {
+           return null;
+       }
     }
 
     public List<String> getInputParameters() {

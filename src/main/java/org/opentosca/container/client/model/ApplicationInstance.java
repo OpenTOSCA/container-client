@@ -1,5 +1,6 @@
 package org.opentosca.container.client.model;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,7 +19,7 @@ public class ApplicationInstance {
 
     private final ServiceTemplateInstanceDTO serviceTemplateInstance;
 
-    private final Map<String, Object> properties;
+    private final Map<String, String> properties;
 
     private final List<NodeInstance> nodeInstances;
 
@@ -30,7 +31,7 @@ public class ApplicationInstance {
         return serviceTemplateInstance.getId().toString();
     }
 
-    public DateTime getCreatedAt() {
+    public Date getCreatedAt() {
         return serviceTemplateInstance.getCreatedAt();
     }
 
@@ -52,7 +53,7 @@ public class ApplicationInstance {
     public List<PlanInstance> getManagementPlanInstances() {
         return managementPlanInstances.stream()
                 .map(PlanInstance::new)
-                .filter(e -> e.getType().equals(PlanInstanceDTO.TypeEnum.MANAGEMENT))
+                .filter(e -> e.getType().equals(PlanInstanceDTO.TypeEnum.DOCS_OASIS_OPEN_ORG_TOSCA_NS_2011_12_PLANTYPES_MANAGEMENTPLAN))
                 .collect(Collectors.toList());
     }
 

@@ -32,17 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.CsarDTO;
-import io.swagger.client.model.InterfaceDTO;
-import io.swagger.client.model.NodeTemplateDTO;
-import io.swagger.client.model.NodeTemplateInstanceDTO;
-import io.swagger.client.model.PlanDTO;
-import io.swagger.client.model.PlanInstanceDTO;
-import io.swagger.client.model.PlanInstanceListDTO;
-import io.swagger.client.model.PropertiesDTO;
-import io.swagger.client.model.ServiceTemplateDTO;
-import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import io.swagger.client.model.TParameter;
+import io.swagger.client.model.*;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.ContainerClient;
@@ -78,8 +68,11 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         executor.submit(() -> {
             List<Application> applications = new ArrayList<>();
             try {
-                for (CsarDTO csar : this.client.getCsars().getCsars()) {
-                    applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
+                CsarListDTO csarListDTO = this.client.getCsars();
+                if (csarListDTO != null && csarListDTO.getCsars() != null) {
+                    for (CsarDTO csar : csarListDTO.getCsars()) {
+                        applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
+                    }
                 }
                 future.complete(applications);
             } catch (Exception e) {
@@ -197,12 +190,12 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     TParameter p = new TParameter();
                     p.setName(e.getKey());
                     p.setValue(e.getValue());
-                    p.setRequired(TParameter.RequiredEnum.YES);
+                    p.setRequired(true);
                     p.setType("String");
                     return p;
                 }).collect(Collectors.toList());
 
-                String correlationId = this.client.invokeBuildPlan(planId, parameters, csarId, serviceTemplateId);
+                String correlationId = this.client.invokeBuildPlan(parameters, planId, csarId, serviceTemplateId);
                 PlanInstanceDTO pi = waitForFinishedPlan(planId, correlationId, csarId, serviceTemplateId, null);
                 if (pi == null) {
                     throw new RuntimeException("Could not determine plan instance");
@@ -259,16 +252,15 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
             try {
                 ServiceTemplateInstanceDTO serviceTemplateInstance =
-                        this.client.getServiceTemplateInstance(csarId, serviceTemplateId, Long.valueOf(id));
-                Map<String, Object> serviceTemplateInstanceProps =
-                        this.client.getServiceTemplateInstancePropertiesAsJSON(csarId, serviceTemplateId, Long.valueOf(id));
+                        this.client.getServiceTemplateInstance(Long.valueOf(id), csarId, serviceTemplateId);
+                Map<String, String> serviceTemplateInstanceProps =
+                        this.client.getServiceTemplateInstancePropertiesAsJSON(Long.valueOf(id), csarId, serviceTemplateId);
                 List<PlanDTO> plans =
                         this.client.getManagementPlans(csarId, serviceTemplateId, Long.valueOf(id)).getPlans();
                 List<NodeTemplateInstanceDTO> nodeTemplateInstances = new ArrayList<>();
                 application.getNodeTemplates().forEach(rethrow(nodeTemplate -> {
                     String nodeTemplateId = encodeValue(nodeTemplate.getId());
-                    nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, csarId,
-                            serviceTemplateId, null, null)
+                    nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, null, null, serviceTemplateInstance.getId())
                             .getNodeTemplateInstances().stream()
                             .filter(n -> n.getServiceTemplateInstanceId()
                                     .equals(serviceTemplateInstance.getId()))
@@ -276,9 +268,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 }));
                 List<NodeInstance> nodeInstances = nodeTemplateInstances.stream().map(rethrow(n -> {
                     String nodeTemplateId = encodeValue(n.getNodeTemplateId());
-                    Map<String, Object> properties =
-                            this.client.getNodeTemplateInstancePropertiesAsJson(nodeTemplateId, csarId, serviceTemplateId,
-                                    n.getId());
+                    Map<String, String> properties =
+                            this.client.getNodeTemplateInstancePropertiesAsJson(n.getId(), nodeTemplateId);
                     return new NodeInstance(n, properties);
                 })).collect(Collectors.toList());
                 ApplicationInstance applicationInstance =
@@ -313,7 +304,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 Long id = Long.valueOf(instance.getId());
 
                 String correlationId =
-                        this.client.invokeManagementPlan(planId, new ArrayList<>(), csarId, serviceTemplateId, id);
+                        this.client.invokeManagementPlan(new ArrayList<>(), csarId, serviceTemplateId, id, planId);
                 PlanInstanceDTO pi = waitForFinishedPlan(planId, correlationId, csarId, serviceTemplateId, id);
                 if (pi == null) {
                     throw new RuntimeException("Could not determine plan instance");
@@ -549,7 +540,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 if (id == null) {
                     pi = this.client.getBuildPlanInstance(plan, instance, csar, serviceTemplate);
                 } else {
-                    pi = this.client.getManagementPlanInstance(plan, instance, csar, serviceTemplate, id);
+                    pi = this.client.getManagementPlanInstance(plan, instance, id, csar, serviceTemplate);
                 }
                 finished = pi.getState().equals(PlanInstanceDTO.StateEnum.FINISHED);
             } catch (final Exception e) {

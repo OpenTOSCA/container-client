@@ -4,13 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.swagger.client.model.CsarDTO;
-import io.swagger.client.model.InterfaceDTO;
-import io.swagger.client.model.NodeTemplateDTO;
-import io.swagger.client.model.PlanDTO;
-import io.swagger.client.model.PlanInstanceDTO;
-import io.swagger.client.model.PropertiesDTO;
-import io.swagger.client.model.ServiceTemplateDTO;
+import io.swagger.client.model.*;
 import lombok.Builder;
 
 @Builder

@@ -1,0 +1,3178 @@
+openapi: 3.0.1
+info:
+  title: Public API for OpenTOSCA Container
+  description: API access to query entities and manipulate them using plans
+  contact:
+    name: OpenTOSCA
+    url: http://opentosca.org
+    email: opentosca@iaas.uni-stuttgart.de
+  license:
+    name: "Apache License, Version 2.0"
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  version: 2.1.0
+paths:
+  /application.wadl/{path}:
+    get:
+      operationId: getExternalGrammar
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/xml: {}
+  /application.wadl:
+    get:
+      operationId: getWadl
+      responses:
+        default:
+          description: default response
+          content:
+            application/vnd.sun.wadl+xml: {}
+            application/xml: {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/boundarydefinitions/interfaces/{name}:
+    get:
+      description: Get an interface of a service template
+      operationId: getBoundaryDefinitionInterface
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Interface of the boundaries definitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/boundarydefinitions/interfaces:
+    get:
+      description: Get interfaces of a service tempate
+      operationId: getBoundaryDefinitionInterfaces
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The interface of the boundary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/boundarydefinitions/properties:
+    get:
+      description: Get properties of a service tempate
+      operationId: getBoundaryDefinitionProperties
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Properties of the boundaries definitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertiesDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/boundarydefinitions:
+    get:
+      operationId: getBoundaryDefinitions
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans/{plan}/instances/{instance}/logs:
+    get:
+      description: Get log entries for a build plan instance
+      operationId: getBuildPlanInstanceLogs
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan Instance Logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceEventListDTO'
+    post:
+      operationId: addBuildPlanLogEntry
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanInstanceLogEntryRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CreatePlanInstanceLogEntryRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans/{plan}/instances/{instance}/state:
+    get:
+      description: Get the state of a build plan instance
+      operationId: getBuildPlanInstanceState
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PlanInstance State
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: changeBuildPlanInstanceState
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans/{plan}:
+    get:
+      description: Get a build plan
+      operationId: getBuildPlan
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Build Plan of the Service Template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans/{plan}/instances/{instance}:
+    get:
+      description: Get a build plan instance
+      operationId: getBuildPlanInstance
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A build plan instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans/{plan}/instances:
+    get:
+      description: Get build plan instances
+      operationId: getBuildPlanInstances
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan Instances of the plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceListDTO'
+    post:
+      description: Invokes a build plan
+      operationId: invokeBuildPlan
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: plan input parameters
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TParameter'
+          application/xml:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TParameter'
+        required: true
+      responses:
+        "200":
+          description: Invokes a build plan
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/buildplans:
+    get:
+      description: Get build plans of service template
+      operationId: getBuildPlans
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Build Plans of the Service Template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListDTO'
+  /csars/{csar}:
+    get:
+      summary: Get all CSARs
+      operationId: getCsar
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A CSAR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsarDTO'
+    delete:
+      description: Delete a CSAR
+      operationId: deleteCsar
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/content:
+    get:
+      operationId: getLinks
+      parameters:
+        - name: recursive
+          in: query
+          schema:
+            type: string
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars:
+    get:
+      summary: Get all CSARs
+      operationId: getCsars
+      responses:
+        "200":
+          description: A list of CSARs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsarListDTO'
+    post:
+      operationId: uploadCsar_1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                enrichment:
+                  type: string
+                file:
+                  $ref: '#/components/schemas/FormDataContentDisposition'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars/transform:
+    post:
+      description: Transform this CSAR to a new CSAR
+      operationId: transformCsar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CsarTransformRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CsarTransformRequest'
+        required: true
+      responses:
+        "200":
+          description: Transformation Plan
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/PlanDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans/{plan}:
+    get:
+      description: Get a management plan
+      operationId: getManagementPlan
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A management plan of the service template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans/{plan}/instances/{instance}:
+    get:
+      description: Get a management plan instance
+      operationId: getManagementPlanInstance
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Management Plan Instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans/{plan}/instances/{instance}/logs:
+    get:
+      description: Get log entries of a management plan instance
+      operationId: getManagementPlanInstanceLogs
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan Instance Logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceEventListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans/{plan}/instances/{instance}/state:
+    get:
+      description: Get state of a management plan instance
+      operationId: getManagementPlanInstanceState
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Management Plan Instance State
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans/{plan}/instances:
+    get:
+      description: Get instances of a management plan
+      operationId: getManagementPlanInstances
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Instances of management plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanInstanceListDTO'
+    post:
+      description: Invokes a management plan
+      operationId: invokeManagementPlan
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: plan
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: plan input parameters
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TParameter'
+          application/xml:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TParameter'
+        required: true
+      responses:
+        "200":
+          description: Response of management plan invocation
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/managementplans:
+    get:
+      description: Get management plans
+      operationId: getManagementPlans
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Management Plans of the ServiceTemplate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListDTO'
+  /{nodetemplate}/instances/{id}:
+    get:
+      description: Get a node template instance
+      operationId: getNodeTemplateInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Node instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateInstanceDTO'
+  /{nodetemplate}/instances/{id}/properties:
+    get:
+      description: Get properties of a node template instance
+      operationId: getNodeTemplateInstancePropertiesAsJson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenAPIMap'
+  /{nodetemplate}/instances/{id}/state:
+    get:
+      description: Get state of a node template instance
+      operationId: getNodeTemplateInstanceState
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /{nodetemplate}/instances:
+    get:
+      description: Get all instances of a node template
+      operationId: getNodeTemplateInstances
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - INITIAL
+                - CREATING
+                - CREATED
+                - CONFIGURING
+                - CONFIGURED
+                - STARTING
+                - STARTED
+                - STOPPING
+                - STOPPED
+                - DELETING
+                - DELETED
+                - ERROR
+                - MIGRATED
+        - name: source
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - name: serviceInstanceId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Node instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateInstanceListDTO'
+  /{nodetemplate}:
+    get:
+      description: Get a node template
+      operationId: getNodeTemplate
+      parameters:
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A NodeTemplate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateDTO'
+  /{nodetemplate}/properties:
+    get:
+      description: Get the properties of a node template
+      operationId: getNodeTemplateProperties
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+  /:
+    get:
+      description: Get all instances of a service template
+      operationId: getServiceTemplateInstances_1
+      responses:
+        "200":
+          description: ServiceTemplate Instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateInstanceListDTO'
+  /{nodetemplate}/uploadDA:
+    post:
+      operationId: uploadStatefulDA
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  $ref: '#/components/schemas/FormDataContentDisposition'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /{id}:
+    get:
+      description: Get a service template instance
+      operationId: getServiceTemplateInstance_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: ServiceTemplate Instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateInstanceDTO'
+  /{id}/properties:
+    get:
+      description: Gets the properties of a service template instance
+      operationId: getServiceTemplateInstancePropertiesAsJSON_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: ServiceTemplate Instance Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenAPIMap'
+  /{id}/state:
+    get:
+      description: Get state of a service template instance
+      operationId: getServiceTemplateInstanceState_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /planbuilder/async:
+    post:
+      operationId: generateBuildPlanAsync
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/GeneratePlanForTopology'
+      responses:
+        default:
+          description: default response
+          content:
+            application/xml: {}
+  /planbuilder/sync:
+    post:
+      operationId: generateBuildPlanSync
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/GeneratePlanForTopology'
+      responses:
+        default:
+          description: default response
+          content:
+            application/xml: {}
+  /planbuilder:
+    get:
+      operationId: getRootPage
+      responses:
+        default:
+          description: default response
+          content:
+            text/html: {}
+  /planbuilder/async/{taskId}:
+    get:
+      operationId: getTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/xml: {}
+  /{relationshiptemplate}/instances/{id}:
+    get:
+      description: Get a relationship template instance
+      operationId: getRelationshipTemplateInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Relationship instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateInstanceDTO'
+  /{relationshiptemplate}/instances/{id}/state:
+    get:
+      description: Get state of a relationship template instance
+      operationId: getRelationshipTemplateInstanceState
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /{relationshiptemplate}/instances:
+    get:
+      description: Get all relationship template instances
+      operationId: getRelationshipTemplateInstances
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - INITIAL
+                - CREATING
+                - CREATED
+                - DELETING
+                - DELETED
+                - ERROR
+                - MIGRATED
+        - name: target
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: serviceInstanceId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Relationship Instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateInstanceListDTO'
+  /{relationshiptemplate}:
+    get:
+      description: Get a relationship template
+      operationId: getRelationshipTemplate
+      parameters:
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: RelationshipTemplate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateDTO'
+  /favicon.ico:
+    get:
+      operationId: faviconStub
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/situationsmonitors:
+    get:
+      operationId: getSituationMonitors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    post:
+      operationId: createSituationMonitor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SituationsMonitorDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/boundarydefinitions/interfaces:
+    get:
+      description: Get interfaces of a service tempate
+      operationId: getInterfaces
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ServiceTemplate Instance Interfaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}:
+    get:
+      description: Get a service template instance
+      operationId: getServiceTemplateInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ServiceTemplate Instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateInstanceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/properties:
+    get:
+      description: Gets the properties of a service template instance
+      operationId: getServiceTemplateInstancePropertiesAsJSON
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ServiceTemplate Instance Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenAPIMap'
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/state:
+    get:
+      description: Get state of a service template instance
+      operationId: getServiceTemplateInstanceState
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/instances:
+    get:
+      description: Get all instances of a service template
+      operationId: getServiceTemplateInstances
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ServiceTemplate Instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateInstanceListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/instances/{id}:
+    get:
+      description: Get a node template instance
+      operationId: getNodeTemplateInstance_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Node instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateInstanceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/instances/{id}/properties:
+    get:
+      description: Get properties of a node template instance
+      operationId: getNodeTemplateInstancePropertiesAsJson_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenAPIMap'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/instances/{id}/state:
+    get:
+      description: Get state of a node template instance
+      operationId: getNodeTemplateInstanceState_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/instances:
+    get:
+      description: Get all instances of a node template
+      operationId: getNodeTemplateInstances_1
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - INITIAL
+                - CREATING
+                - CREATED
+                - CONFIGURING
+                - CONFIGURED
+                - STARTING
+                - STARTED
+                - STOPPING
+                - STOPPED
+                - DELETING
+                - DELETED
+                - ERROR
+                - MIGRATED
+        - name: source
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - name: serviceInstanceId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Node instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateInstanceListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}:
+    get:
+      description: Get a node template
+      operationId: getNodeTemplate_1
+      parameters:
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A NodeTemplate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/properties:
+    get:
+      description: Get the properties of a node template
+      operationId: getNodeTemplateProperties_1
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates:
+    get:
+      description: Get all node templates of a service template
+      operationId: getNodeTemplates
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: NodeTempaltes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTemplateListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/uploadDA:
+    post:
+      operationId: uploadStatefulDA_1
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: nodetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  $ref: '#/components/schemas/FormDataContentDisposition'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /csars/{csar}/servicetemplates/{servicetemplate}/relationshiptemplates/{relationshiptemplate}/instances/{id}:
+    get:
+      description: Get a relationship template instance
+      operationId: getRelationshipTemplateInstance_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Relationship instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateInstanceDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/relationshiptemplates/{relationshiptemplate}/instances/{id}/state:
+    get:
+      description: Get state of a relationship template instance
+      operationId: getRelationshipTemplateInstanceState_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: State
+          content:
+            application/json:
+              schema:
+                type: string
+  /csars/{csar}/servicetemplates/{servicetemplate}/relationshiptemplates/{relationshiptemplate}/instances:
+    get:
+      description: Get all relationship template instances
+      operationId: getRelationshipTemplateInstances_1
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - INITIAL
+                - CREATING
+                - CREATED
+                - DELETING
+                - DELETED
+                - ERROR
+                - MIGRATED
+        - name: target
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: serviceInstanceId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Relationship Instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateInstanceListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/relationshiptemplates/{relationshiptemplate}:
+    get:
+      description: Get a relationship template
+      operationId: getRelationshipTemplate_1
+      parameters:
+        - name: relationshiptemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: RelationshipTemplate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/relationshiptemplates:
+    get:
+      description: Get all relationship templates of a service template
+      operationId: getRelationshipTemplates
+      responses:
+        "200":
+          description: RelationshipTemplates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipTemplateListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}:
+    get:
+      description: Get a service template
+      operationId: getServiceTemplate
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan Instance Logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateDTO'
+  /csars/{csar}/servicetemplates:
+    get:
+      description: Get all service templates
+      operationId: getServiceTemplates
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ServiceTemplate list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTemplateListDTO'
+  /csars/{csar}/servicetemplates/{servicetemplate}/transform:
+    post:
+      description: Generates a plan to adapt service template instances via the given
+        the source and target nodes/relations
+      operationId: transformCsar_1
+      parameters:
+        - name: csar
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: servicetemplate
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceTransformRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/ServiceTransformRequest'
+        required: true
+      responses:
+        "200":
+          description: Transformation Plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDTO'
+  /{id}/situationsmonitors:
+    get:
+      operationId: getSituationMonitors_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    post:
+      operationId: createSituationMonitor_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SituationsMonitorDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /{id}/boundarydefinitions/interfaces:
+    get:
+      description: Get interfaces of a service tempate
+      operationId: getInterfaces_1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: ServiceTemplate Instance Interfaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceListDTO'
+  /situationsapi/situations:
+    get:
+      operationId: getSituations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    post:
+      operationId: createSituation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SituationDTO'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SituationDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /situationsapi/triggers:
+    get:
+      operationId: getSituationTriggers
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    post:
+      operationId: createSituationTrigger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SituationTriggerDTO'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SituationTriggerDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /situationsapi/situations/{situation}:
+    get:
+      operationId: getSituation
+      parameters:
+        - name: situation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    put:
+      operationId: updateSituation
+      parameters:
+        - name: situation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SituationDTO'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SituationDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+    delete:
+      operationId: deleteSituation
+      parameters:
+        - name: situation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /situationsapi/triggers/{situationtrigger}:
+    get:
+      operationId: getSituationTrigger
+      parameters:
+        - name: situationtrigger
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+    delete:
+      operationId: deleteSituationTrigger
+      parameters:
+        - name: situationtrigger
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /situationsapi:
+    get:
+      operationId: getRoot
+      responses:
+        default:
+          description: default response
+          content:
+            text/plain: {}
+  /situationsapi/triggers/{situationtrigger}/{situationtriggerinstance}:
+    get:
+      operationId: getSituationTriggerInstance
+      parameters:
+        - name: situationtrigger
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: situationtriggerinstance
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            application/xml: {}
+  /situationsapi/situations/{situation}/active:
+    put:
+      operationId: updateSituationActivity
+      parameters:
+        - name: situation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+components:
+  schemas:
+    InterfaceDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          xml:
+            attribute: true
+        operations:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OperationDTO'
+          xml:
+            name: Operations
+            wrapped: true
+      xml:
+        name: Interface
+    NodeOperationDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          xml:
+            attribute: true
+        interfaceName:
+          type: string
+          xml:
+            name: interface
+            attribute: true
+        inputParameters:
+          type: array
+          xml:
+            name: InputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/TParameter'
+        outputParameters:
+          type: array
+          xml:
+            name: OutputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/TParameter'
+      xml:
+        name: NodeOperation
+    OperationDTO:
+      type: object
+      properties:
+        nodeOperation:
+          $ref: '#/components/schemas/NodeOperationDTO'
+        relationshipOperation:
+          $ref: '#/components/schemas/RelationshipOperation'
+        plan:
+          $ref: '#/components/schemas/PlanDTO'
+      xml:
+        name: Operation
+    PlanDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            attribute: true
+        planType:
+          type: string
+          xml:
+            attribute: true
+        planLanguage:
+          type: string
+          xml:
+            attribute: true
+        inputParameters:
+          type: array
+          xml:
+            name: InputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/TParameter'
+        outputParameters:
+          type: array
+          xml:
+            name: OutputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/TParameter'
+        planModelReference:
+          type: string
+          xml:
+            name: PlanModelReference
+        calculatedWCET:
+          type: integer
+          format: int64
+          xml:
+            name: CalculatedWCET
+      xml:
+        name: Plan
+    RelationshipOperation:
+      type: object
+      properties:
+        relationshipRef:
+          type: object
+        interfaceName:
+          type: string
+          xml:
+            attribute: true
+        operationName:
+          type: string
+          xml:
+            attribute: true
+    TParameter:
+      type: object
+      properties:
+        name:
+          type: string
+          xml:
+            attribute: true
+        type:
+          type: string
+          xml:
+            attribute: true
+        required:
+          type: boolean
+          xml:
+            attribute: true
+        value:
+          type: string
+      xml:
+        name: Parameter
+    InterfaceListDTO:
+      type: object
+      properties:
+        interfaces:
+          type: array
+          xml:
+            name: Interfaces
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/InterfaceDTO'
+      xml:
+        name: InterfaceResources
+    PropertiesDTO:
+      type: object
+      properties:
+        xmlFragment:
+          type: object
+        propertyMappings:
+          type: array
+          xml:
+            name: PropertyMappings
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PropertyMappingDTO'
+      xml:
+        name: Properties
+    PropertyMappingDTO:
+      type: object
+      properties:
+        serviceTemplatePropertyRef:
+          type: string
+        targetObjectRef:
+          type: string
+        targetPropertyRef:
+          type: string
+      xml:
+        name: PropertyMapping
+    CreatePlanInstanceLogEntryRequest:
+      type: object
+      properties:
+        logEntry:
+          type: string
+      xml:
+        name: log
+    PlanInstanceDTO:
+      type: object
+      properties:
+        serviceTemplateInstanceId:
+          type: integer
+          format: int64
+        correlationId:
+          type: string
+          xml:
+            attribute: true
+        state:
+          type: string
+          enum:
+            - RUNNING
+            - FINISHED
+            - FAILED
+            - UNKNOWN
+        type:
+          type: string
+          enum:
+            - http://docs.oasis-open.org/tosca/ns/2011/12/PlanTypes/BuildPlan
+            - http://docs.oasis-open.org/tosca/ns/2011/12/PlanTypes/TerminationPlan
+            - http://docs.oasis-open.org/tosca/ns/2011/12/PlanTypes/ManagementPlan
+            - http://opentosca.org/plantypes/TransformationPlan
+        inputs:
+          type: array
+          xml:
+            name: InputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanInstanceInputDTO'
+        outputs:
+          type: array
+          xml:
+            name: OutputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanInstanceOutputDTO'
+        logs:
+          type: array
+          xml:
+            name: Logs
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanInstanceEventDTO'
+      xml:
+        name: PlanInstance
+    PlanInstanceEventDTO:
+      type: object
+      properties:
+        startTimestamp:
+          type: string
+          format: date-time
+          xml:
+            name: Timestamp
+        endTimestamp:
+          type: string
+          format: date-time
+          xml:
+            name: EndTimestamp
+        status:
+          type: string
+          xml:
+            name: Status
+        type:
+          type: string
+          xml:
+            name: Type
+        message:
+          type: string
+          xml:
+            name: Message
+        nodeTemplateID:
+          type: string
+          xml:
+            name: NodeTemplateID
+        interfaceName:
+          type: string
+          xml:
+            name: InterfaceName
+        operationName:
+          type: string
+          xml:
+            name: OperationName
+        executionDuration:
+          type: integer
+          format: int64
+          xml:
+            name: ExecutionDuration
+      xml:
+        name: PlanInstanceEvent
+    PlanInstanceInputDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          xml:
+            name: Value
+        type:
+          type: string
+          xml:
+            name: Type
+      xml:
+        name: PlanInstanceInput
+    PlanInstanceOutputDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          xml:
+            name: Value
+        type:
+          type: string
+          xml:
+            name: Type
+      xml:
+        name: PlanInstanceOutput
+    PlanInstanceEventListDTO:
+      type: object
+      properties:
+        planInstanceEvents:
+          type: array
+          xml:
+            name: PlanInstnaceEvents
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanInstanceEventDTO'
+      xml:
+        name: PlanInstnaceEventResources
+    PlanInstanceListDTO:
+      type: object
+      properties:
+        planInstances:
+          type: array
+          xml:
+            name: PlanInstances
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanInstanceDTO'
+      xml:
+        name: PlanInstanceResources
+    PlanListDTO:
+      type: object
+      properties:
+        plans:
+          type: array
+          xml:
+            name: Plans
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/PlanDTO'
+      xml:
+        name: PlanResources
+    CsarDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            name: Name
+        displayName:
+          type: string
+          xml:
+            name: DisplayName
+        version:
+          type: string
+          xml:
+            name: Version
+        authors:
+          type: array
+          xml:
+            name: Authors
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: Author
+        description:
+          type: string
+          xml:
+            name: Description
+        iconUrl:
+          type: string
+          xml:
+            name: IconUrl
+        imageUrl:
+          type: string
+          xml:
+            name: ImageUrl
+      xml:
+        name: Csar
+    CsarListDTO:
+      type: object
+      properties:
+        csars:
+          type: array
+          xml:
+            name: Csars
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/CsarDTO'
+      xml:
+        name: CsarResources
+    CsarTransformRequest:
+      type: object
+      properties:
+        sourceCsarName:
+          type: string
+          xml:
+            name: SourceCsarName
+        targetCsarName:
+          type: string
+          xml:
+            name: TargetCsarName
+      xml:
+        name: CsarTransformRequest
+    CsarUploadRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          xml:
+            name: Name
+        url:
+          type: string
+          xml:
+            name: Url
+        enrich:
+          type: string
+          xml:
+            name: Enrich
+      xml:
+        name: CsarUploadRequest
+    FormDataContentDisposition:
+      type: object
+      properties:
+        type:
+          type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        fileName:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        modificationDate:
+          type: string
+          format: date-time
+        readDate:
+          type: string
+          format: date-time
+        size:
+          type: integer
+          format: int64
+        name:
+          type: string
+    NodeTemplateInstanceDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        nodeTemplateId:
+          type: string
+          xml:
+            name: NodeTemplateId
+        nodeTemplateType:
+          type: string
+          xml:
+            name: NodeTemplateType
+        state:
+          type: string
+          xml:
+            name: State
+          enum:
+            - INITIAL
+            - CREATING
+            - CREATED
+            - CONFIGURING
+            - CONFIGURED
+            - STARTING
+            - STARTED
+            - STOPPING
+            - STOPPED
+            - DELETING
+            - DELETED
+            - ERROR
+            - MIGRATED
+        createdAt:
+          type: string
+          format: date-time
+          xml:
+            name: CreatedAt
+        csarId:
+          type: string
+          xml:
+            name: CsarId
+        serviceTemplateInstanceId:
+          type: integer
+          format: int64
+          xml:
+            name: ServiceTemplateInstanceId
+        serviceTemplateId:
+          type: string
+          xml:
+            name: ServiceTemplateId
+      xml:
+        name: NodeTemplateInstance
+    OpenAPIMap:
+      type: object
+      additionalProperties:
+        type: string
+    NodeTemplateInstanceListDTO:
+      type: object
+      properties:
+        nodeTemplateInstances:
+          type: array
+          xml:
+            name: NodeTemplateInstances
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/NodeTemplateInstanceDTO'
+      xml:
+        name: NodeTemplateInstanceResources
+    NodeTemplateDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            name: Name
+        nodeType:
+          type: string
+          xml:
+            name: NodeType
+        interfaces:
+          $ref: '#/components/schemas/InterfaceListDTO'
+      xml:
+        name: NodeTemplate
+    Attr:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        schemaTypeInfo:
+          $ref: '#/components/schemas/TypeInfo'
+        id:
+          type: boolean
+        ownerElement:
+          $ref: '#/components/schemas/Element'
+        specified:
+          type: boolean
+        attributes:
+          $ref: '#/components/schemas/NamedNodeMap'
+        nodeName:
+          type: string
+        nodeValue:
+          type: string
+        nodeType:
+          type: integer
+          format: int32
+        parentNode:
+          $ref: '#/components/schemas/Node'
+        childNodes:
+          $ref: '#/components/schemas/NodeList'
+        firstChild:
+          $ref: '#/components/schemas/Node'
+        lastChild:
+          $ref: '#/components/schemas/Node'
+        previousSibling:
+          $ref: '#/components/schemas/Node'
+        nextSibling:
+          $ref: '#/components/schemas/Node'
+        ownerDocument:
+          $ref: '#/components/schemas/Document'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
+        namespaceURI:
+          type: string
+        localName:
+          type: string
+    DOMConfiguration:
+      type: object
+      properties:
+        parameterNames:
+          $ref: '#/components/schemas/DOMStringList'
+    DOMImplementation:
+      type: object
+    DOMStringList:
+      type: object
+      properties:
+        length:
+          type: integer
+          format: int32
+    Document:
+      type: object
+      properties:
+        implementation:
+          $ref: '#/components/schemas/DOMImplementation'
+        doctype:
+          $ref: '#/components/schemas/DocumentType'
+        inputEncoding:
+          type: string
+        xmlEncoding:
+          type: string
+        xmlStandalone:
+          type: boolean
+        xmlVersion:
+          type: string
+        strictErrorChecking:
+          type: boolean
+        domConfig:
+          $ref: '#/components/schemas/DOMConfiguration'
+        documentElement:
+          $ref: '#/components/schemas/Element'
+        documentURI:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/NamedNodeMap'
+        nodeName:
+          type: string
+        nodeValue:
+          type: string
+        nodeType:
+          type: integer
+          format: int32
+        parentNode:
+          $ref: '#/components/schemas/Node'
+        childNodes:
+          $ref: '#/components/schemas/NodeList'
+        firstChild:
+          $ref: '#/components/schemas/Node'
+        lastChild:
+          $ref: '#/components/schemas/Node'
+        previousSibling:
+          $ref: '#/components/schemas/Node'
+        nextSibling:
+          $ref: '#/components/schemas/Node'
+        ownerDocument:
+          $ref: '#/components/schemas/Document'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
+        namespaceURI:
+          type: string
+        localName:
+          type: string
+    DocumentType:
+      type: object
+      properties:
+        name:
+          type: string
+        entities:
+          $ref: '#/components/schemas/NamedNodeMap'
+        systemId:
+          type: string
+        publicId:
+          type: string
+        notations:
+          $ref: '#/components/schemas/NamedNodeMap'
+        internalSubset:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/NamedNodeMap'
+        nodeName:
+          type: string
+        nodeValue:
+          type: string
+        nodeType:
+          type: integer
+          format: int32
+        parentNode:
+          $ref: '#/components/schemas/Node'
+        childNodes:
+          $ref: '#/components/schemas/NodeList'
+        firstChild:
+          $ref: '#/components/schemas/Node'
+        lastChild:
+          $ref: '#/components/schemas/Node'
+        previousSibling:
+          $ref: '#/components/schemas/Node'
+        nextSibling:
+          $ref: '#/components/schemas/Node'
+        ownerDocument:
+          $ref: '#/components/schemas/Document'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
+        namespaceURI:
+          type: string
+        localName:
+          type: string
+    Element:
+      type: object
+      properties:
+        schemaTypeInfo:
+          $ref: '#/components/schemas/TypeInfo'
+        tagName:
+          type: string
+        attributeNodeNS:
+          $ref: '#/components/schemas/Attr'
+        attributeNode:
+          $ref: '#/components/schemas/Attr'
+        attributes:
+          $ref: '#/components/schemas/NamedNodeMap'
+        nodeName:
+          type: string
+        nodeValue:
+          type: string
+        nodeType:
+          type: integer
+          format: int32
+        parentNode:
+          $ref: '#/components/schemas/Node'
+        childNodes:
+          $ref: '#/components/schemas/NodeList'
+        firstChild:
+          $ref: '#/components/schemas/Node'
+        lastChild:
+          $ref: '#/components/schemas/Node'
+        previousSibling:
+          $ref: '#/components/schemas/Node'
+        nextSibling:
+          $ref: '#/components/schemas/Node'
+        ownerDocument:
+          $ref: '#/components/schemas/Document'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
+        namespaceURI:
+          type: string
+        localName:
+          type: string
+    NamedNodeMap:
+      type: object
+      properties:
+        length:
+          type: integer
+          format: int32
+        namedItemNS:
+          $ref: '#/components/schemas/Node'
+        namedItem:
+          $ref: '#/components/schemas/Node'
+    Node:
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/NamedNodeMap'
+        nodeName:
+          type: string
+        nodeValue:
+          type: string
+        nodeType:
+          type: integer
+          format: int32
+        parentNode:
+          $ref: '#/components/schemas/Node'
+        childNodes:
+          $ref: '#/components/schemas/NodeList'
+        firstChild:
+          $ref: '#/components/schemas/Node'
+        lastChild:
+          $ref: '#/components/schemas/Node'
+        previousSibling:
+          $ref: '#/components/schemas/Node'
+        nextSibling:
+          $ref: '#/components/schemas/Node'
+        ownerDocument:
+          $ref: '#/components/schemas/Document'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
+        namespaceURI:
+          type: string
+        localName:
+          type: string
+    NodeList:
+      type: object
+      properties:
+        length:
+          type: integer
+          format: int32
+    TypeInfo:
+      type: object
+      properties:
+        typeName:
+          type: string
+        typeNamespace:
+          type: string
+    NodeTemplateListDTO:
+      type: object
+      properties:
+        nodeTemplates:
+          type: array
+          xml:
+            name: NodeTemplates
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/NodeTemplateDTO'
+      xml:
+        name: NodeTemplateResources
+    GeneratePlanForTopology:
+      type: object
+      properties:
+        CSARURL:
+          type: string
+        PLANPOSTURL:
+          type: string
+    RelationshipTemplateInstanceDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        relationshipTemplateId:
+          type: string
+          xml:
+            name: RelationshipTemplateId
+        relationshipTemplateType:
+          type: string
+          xml:
+            name: RelationshipTemplateType
+        state:
+          type: string
+          xml:
+            name: State
+          enum:
+            - INITIAL
+            - CREATING
+            - CREATED
+            - DELETING
+            - DELETED
+            - ERROR
+            - MIGRATED
+        createdAt:
+          type: string
+          format: date-time
+          xml:
+            name: CreatedAt
+        csarId:
+          type: string
+          xml:
+            name: CsarId
+        serviceTemplateId:
+          type: string
+          xml:
+            name: ServiceTemplateId
+        sourceNodeTemplateInstanceId:
+          type: integer
+          format: int64
+          xml:
+            name: SourceNodeTemplateInstanceId
+        targetNodeTemplateInstanceId:
+          type: integer
+          format: int64
+          xml:
+            name: TargetNodeTemplateInstanceId
+      xml:
+        name: RelationshipTemplateInstance
+    RelationshipTemplateInstanceListDTO:
+      type: object
+      properties:
+        relationshipTemplateInstances:
+          type: array
+          xml:
+            name: RelationshipTemplateInstances
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/RelationshipTemplateInstanceDTO'
+      xml:
+        name: RelationshipTemplateInstanceResources
+    RelationshipTemplateDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            name: Name
+        relationshipType:
+          type: string
+          xml:
+            name: RelationshipType
+      xml:
+        name: RelationshipTemplate
+    RelationshipTemplateListDTO:
+      type: object
+      properties:
+        relationshipTemplates:
+          type: array
+          xml:
+            name: RelationshipTemplate
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/RelationshipTemplateDTO'
+      xml:
+        name: RelationshipTemplateResources
+    SituationIdsWrapper:
+      type: object
+      properties:
+        situationId:
+          type: array
+          items:
+            type: integer
+            format: int64
+    SituationsMonitorDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        nodeId2SituationIds:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SituationIdsWrapper'
+      xml:
+        name: SituationsMonitor
+    ServiceTemplateInstanceDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        createdAt:
+          type: string
+          format: date-time
+          xml:
+            name: CreatedAt
+        csarId:
+          type: string
+          xml:
+            name: CsarId
+        serviceTemplateId:
+          type: string
+          xml:
+            name: ServiceTemplateId
+        state:
+          type: string
+          enum:
+            - INITIAL
+            - CREATING
+            - CREATED
+            - DELETING
+            - DELETED
+            - ERROR
+            - MIGRATING
+            - MIGRATED
+            - ADAPTING
+      xml:
+        name: ServiceTemplateInstance
+    ServiceTemplateInstanceListDTO:
+      type: object
+      properties:
+        serviceTemplateInstances:
+          type: array
+          xml:
+            name: ServiceTemplateInstances
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/ServiceTemplateInstanceDTO'
+      xml:
+        name: ServiceTemplateInstanceResources
+    ServiceTemplateDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            name: Name
+      xml:
+        name: ServiceTemplate
+    ServiceTemplateListDTO:
+      type: object
+      properties:
+        serviceTemplates:
+          type: array
+          xml:
+            name: ServiceTemplates
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/ServiceTemplateDTO'
+      xml:
+        name: ServiceTemplateResources
+    ServiceTransformRequest:
+      type: object
+      properties:
+        sourceNodeTemplates:
+          type: array
+          xml:
+            name: SourceNodeTemplates
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: NodeTemplate
+        sourceRelationshipTemplates:
+          type: array
+          xml:
+            name: SourceRelationshipTemplates
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: RelationshipTemplate
+        targetNodeTemplates:
+          type: array
+          xml:
+            name: TargetNodeTemplates
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: NodeTemplate
+        targetRelationshipTemplates:
+          type: array
+          xml:
+            name: TargetRelationshipTemplates
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: RelationshipTemplate
+      xml:
+        name: ServiceTransformRequest
+    SituationDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        thingId:
+          type: string
+          xml:
+            name: ThingId
+        situationTemplateId:
+          type: string
+          xml:
+            name: SituationTemplateId
+        active:
+          type: boolean
+          xml:
+            name: Active
+        eventProbability:
+          type: number
+          format: float
+          xml:
+            name: EventProbability
+        eventTime:
+          type: string
+          xml:
+            name: EventTime
+      xml:
+        name: Situation
+    SituationTriggerDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          xml:
+            attribute: true
+        situationIds:
+          type: array
+          xml:
+            name: Situations
+            wrapped: true
+          items:
+            type: integer
+            format: int64
+            xml:
+              name: SituationId
+        csarId:
+          type: string
+          xml:
+            name: CsarId
+        onActivation:
+          type: boolean
+        isSingleInstance:
+          type: boolean
+          writeOnly: true
+        serviceInstanceId:
+          type: integer
+          format: int64
+          xml:
+            name: ServiceInstanceId
+        nodeInstanceId:
+          type: integer
+          format: int64
+          xml:
+            name: NodeInstanceId
+        interfaceName:
+          type: string
+          xml:
+            name: InterfaceName
+        timeAvailableInSeconds:
+          type: integer
+          format: int64
+          xml:
+            name: TimeAvailableInSeconds
+        operationName:
+          type: string
+          xml:
+            name: OperationName
+        inputParams:
+          type: array
+          xml:
+            name: InputParameters
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/SituationTriggerInputDTO'
+        eventProbability:
+          type: number
+          format: float
+          xml:
+            name: EventProbability
+        eventTime:
+          type: string
+          xml:
+            name: EventTime
+        singleInstance:
+          type: boolean
+      xml:
+        name: SituationTrigger
+    SituationTriggerInputDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          xml:
+            name: Value
+        type:
+          type: string
+          xml:
+            name: Type
+      xml:
+        name: InputParameter

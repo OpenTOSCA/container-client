@@ -11,7 +11,7 @@ public class NodeInstance {
 
     private final NodeTemplateInstanceDTO nodeTemplateInstance;
 
-    private final Map<String, Object> properties;
+    private final Map<String, String> properties;
 
     public String getId() {
         return String.valueOf(nodeTemplateInstance.getId());
