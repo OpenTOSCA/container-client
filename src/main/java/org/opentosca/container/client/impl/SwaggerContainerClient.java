@@ -89,7 +89,8 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         executor.submit(() -> {
             try {
                 CsarDTO csar = this.client.getCsar(id);
-                ServiceTemplateDTO serviceTemplate = this.client.getServiceTemplates(id).getServiceTemplates().get(0);
+                ServiceTemplateListDTO serviceTemplateListDTO = this.client.getServiceTemplates(id);
+                ServiceTemplateDTO serviceTemplate = serviceTemplateListDTO.getServiceTemplates().get(0);;
                 String serviceTemplateId = encodeValue(serviceTemplate.getId());
                 List<InterfaceDTO> interfaces =
                         this.client.getBoundaryDefinitionInterfaces(csar.getId(), serviceTemplateId)

@@ -931,7 +931,7 @@ paths:
         "200":
           description: ServiceTemplate Instances
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateInstanceListDTO'
   /{nodetemplate}/uploadDA:
@@ -982,7 +982,7 @@ paths:
         "200":
           description: ServiceTemplate Instance
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateInstanceDTO'
   /{id}/properties:
@@ -1018,7 +1018,7 @@ paths:
         "200":
           description: State
           content:
-            application/json:
+            application/xml:
               schema:
                 type: string
   /planbuilder/async:
@@ -1262,7 +1262,7 @@ paths:
         "200":
           description: ServiceTemplate Instance Interfaces
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/InterfaceListDTO'
   /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}:
@@ -1290,7 +1290,7 @@ paths:
         "200":
           description: ServiceTemplate Instance
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateInstanceDTO'
   /csars/{csar}/servicetemplates/{servicetemplate}/instances/{id}/properties:
@@ -1346,7 +1346,7 @@ paths:
         "200":
           description: State
           content:
-            application/json:
+            application/xml:
               schema:
                 type: string
   /csars/{csar}/servicetemplates/{servicetemplate}/instances:
@@ -1368,7 +1368,7 @@ paths:
         "200":
           description: ServiceTemplate Instances
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateInstanceListDTO'
   /csars/{csar}/servicetemplates/{servicetemplate}/nodetemplates/{nodetemplate}/instances/{id}:
@@ -1722,7 +1722,7 @@ paths:
         "200":
           description: Plan Instance Logs
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateDTO'
   /csars/{csar}/servicetemplates:
@@ -1739,7 +1739,7 @@ paths:
         "200":
           description: ServiceTemplate list
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/ServiceTemplateListDTO'
   /csars/{csar}/servicetemplates/{servicetemplate}/transform:
@@ -1771,7 +1771,7 @@ paths:
         "200":
           description: Transformation Plan
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/PlanDTO'
   /{id}/situationsmonitors:
@@ -1825,7 +1825,7 @@ paths:
         "200":
           description: ServiceTemplate Instance Interfaces
           content:
-            application/json:
+            application/xml:
               schema:
                 $ref: '#/components/schemas/InterfaceListDTO'
   /situationsapi/situations:
@@ -2547,6 +2547,10 @@ components:
     Attr:
       type: object
       properties:
+        ownerElement:
+          $ref: '#/components/schemas/Element'
+        specified:
+          type: boolean
         name:
           type: string
         value:
@@ -2555,10 +2559,12 @@ components:
           $ref: '#/components/schemas/TypeInfo'
         id:
           type: boolean
-        ownerElement:
-          $ref: '#/components/schemas/Element'
-        specified:
-          type: boolean
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
         attributes:
           $ref: '#/components/schemas/NamedNodeMap'
         nodeName:
@@ -2582,15 +2588,9 @@ components:
           $ref: '#/components/schemas/Node'
         ownerDocument:
           $ref: '#/components/schemas/Document'
-        prefix:
-          type: string
-        baseURI:
-          type: string
-        textContent:
+        localName:
           type: string
         namespaceURI:
-          type: string
-        localName:
           type: string
     DOMConfiguration:
       type: object
@@ -2608,6 +2608,8 @@ components:
     Document:
       type: object
       properties:
+        documentElement:
+          $ref: '#/components/schemas/Element'
         implementation:
           $ref: '#/components/schemas/DOMImplementation'
         doctype:
@@ -2622,11 +2624,15 @@ components:
           type: string
         strictErrorChecking:
           type: boolean
+        documentURI:
+          type: string
         domConfig:
           $ref: '#/components/schemas/DOMConfiguration'
-        documentElement:
-          $ref: '#/components/schemas/Element'
-        documentURI:
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
           type: string
         attributes:
           $ref: '#/components/schemas/NamedNodeMap'
@@ -2651,30 +2657,30 @@ components:
           $ref: '#/components/schemas/Node'
         ownerDocument:
           $ref: '#/components/schemas/Document'
-        prefix:
-          type: string
-        baseURI:
-          type: string
-        textContent:
+        localName:
           type: string
         namespaceURI:
-          type: string
-        localName:
           type: string
     DocumentType:
       type: object
       properties:
-        name:
-          type: string
-        entities:
-          $ref: '#/components/schemas/NamedNodeMap'
-        systemId:
-          type: string
-        publicId:
-          type: string
         notations:
           $ref: '#/components/schemas/NamedNodeMap'
         internalSubset:
+          type: string
+        name:
+          type: string
+        systemId:
+          type: string
+        entities:
+          $ref: '#/components/schemas/NamedNodeMap'
+        publicId:
+          type: string
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
           type: string
         attributes:
           $ref: '#/components/schemas/NamedNodeMap'
@@ -2699,27 +2705,27 @@ components:
           $ref: '#/components/schemas/Node'
         ownerDocument:
           $ref: '#/components/schemas/Document'
-        prefix:
-          type: string
-        baseURI:
-          type: string
-        textContent:
+        localName:
           type: string
         namespaceURI:
-          type: string
-        localName:
           type: string
     Element:
       type: object
       properties:
-        schemaTypeInfo:
-          $ref: '#/components/schemas/TypeInfo'
         tagName:
           type: string
         attributeNodeNS:
           $ref: '#/components/schemas/Attr'
         attributeNode:
           $ref: '#/components/schemas/Attr'
+        schemaTypeInfo:
+          $ref: '#/components/schemas/TypeInfo'
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
         attributes:
           $ref: '#/components/schemas/NamedNodeMap'
         nodeName:
@@ -2743,29 +2749,29 @@ components:
           $ref: '#/components/schemas/Node'
         ownerDocument:
           $ref: '#/components/schemas/Document'
-        prefix:
-          type: string
-        baseURI:
-          type: string
-        textContent:
+        localName:
           type: string
         namespaceURI:
-          type: string
-        localName:
           type: string
     NamedNodeMap:
       type: object
       properties:
+        namedItem:
+          $ref: '#/components/schemas/Node'
+        namedItemNS:
+          $ref: '#/components/schemas/Node'
         length:
           type: integer
           format: int32
-        namedItemNS:
-          $ref: '#/components/schemas/Node'
-        namedItem:
-          $ref: '#/components/schemas/Node'
     Node:
       type: object
       properties:
+        prefix:
+          type: string
+        baseURI:
+          type: string
+        textContent:
+          type: string
         attributes:
           $ref: '#/components/schemas/NamedNodeMap'
         nodeName:
@@ -2789,15 +2795,9 @@ components:
           $ref: '#/components/schemas/Node'
         ownerDocument:
           $ref: '#/components/schemas/Document'
-        prefix:
-          type: string
-        baseURI:
-          type: string
-        textContent:
+        localName:
           type: string
         namespaceURI:
-          type: string
-        localName:
           type: string
     NodeList:
       type: object
@@ -2808,9 +2808,9 @@ components:
     TypeInfo:
       type: object
       properties:
-        typeName:
-          type: string
         typeNamespace:
+          type: string
+        typeName:
           type: string
     NodeTemplateListDTO:
       type: object
