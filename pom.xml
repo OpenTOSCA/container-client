@@ -14,18 +14,52 @@
     <artifactId>container-client</artifactId>
     <version>2.1.0-SNAPSHOT</version>
 
+    <repositories>
+        <repository>
+            <name>Central</name>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+        <repository>
+            <name>JCenter Public Repository</name>
+            <id>jcenter</id>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
+        <repository>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <properties>
         <java.version>1.8</java.version>
         <jdk.version>1.8</jdk.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <swagger.version>1.5.15</swagger.version>
-        <jersey.version>2.25.1</jersey.version>
-        <jackson.version>2.8.9</jackson.version>
+        <jersey.version>2.30.1</jersey.version>
+        <jackson.version>2.11.1</jackson.version>
         <migbase64.version>2.2</migbase64.version>
+        <winery.version>ustutt-SNAPSHOT</winery.version>
+        <winery.groupid>com.github.opentosca.winery</winery.groupid>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>${winery.groupid}</groupId>
+            <artifactId>org.eclipse.winery.model.tosca.canonical</artifactId>
+            <version>${winery.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${winery.groupid}</groupId>
+            <artifactId>org.eclipse.winery.repository</artifactId>
+            <version>${winery.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1.1</version>
+        </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
@@ -90,6 +124,51 @@
             <artifactId>json</artifactId>
             <version>20160810</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

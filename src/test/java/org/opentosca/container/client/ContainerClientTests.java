@@ -1,12 +1,17 @@
 package org.opentosca.container.client;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.winery.accountability.exceptions.AccountabilityException;
+import org.eclipse.winery.repository.exceptions.RepositoryCorruptException;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -25,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.xml.namespace.QName;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -35,18 +42,25 @@ public class ContainerClientTests {
 
     private ContainerClient client;
 
-    @Before
-    public void before() {
+    private String containerHost = "localhost";
+    private String containerPort = "1337";
+
+    public static final String TESTAPPLICATIONSREPOSITORY = "https://github.com/OpenTOSCA/tosca-definitions-test-applications";
+    public QName csarId = new QName("http://opentosca.org/test/applications/servicetemplates", "MyTinyToDo-DockerEngine-Test_w1-wip1");
+
+    private TestUtils testUtils = new TestUtils();
+
+    private final Path csarPath;
+    private final String applicationName;
+
+    public ContainerClientTests() throws GitAPIException, AccountabilityException, RepositoryCorruptException, IOException, ExecutionException, InterruptedException {
         this.client = ContainerClientBuilder.builder()
-                .withHostname(config.getHostname())
+                .withHostname(this.containerHost)
                 .build();
-        // Only run tests if OpenTOSCA ecosystem is up and running ;-)
-        try {
-            client.getApplications();
-        } catch (Exception e) {
-            Assume.assumeNoException(e);
-        }
+        this.csarPath = testUtils.fetchCsar(TESTAPPLICATIONSREPOSITORY, csarId);
+        this.applicationName = this.csarPath.getFileName().toString();
     }
+
 
     @Test
     public void test_10_empty_responses() {
@@ -59,51 +73,39 @@ public class ContainerClientTests {
 
     @Test
     public void test_20_upload() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Assert.assertFalse(client.getApplication(test.getName()).isPresent());
-            Path path = Paths.get(config.getPath(), test.getName());
-            Application application = client.uploadApplication(path);
-            Assert.assertEquals(test.getName(), application.getId());
-        }
+        Application application = client.uploadApplication(this.csarPath);
+        Assert.assertEquals(this.csarPath.getFileName().toString(), application.getId());
+
         List<Application> applications = client.getApplications();
         Assert.assertEquals(config.getTests().size(), applications.size());
     }
 
+
     @Test
     public void test_21_get_boundary_definition_properties() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);
             BoundaryDefinitionProperties properties = application.getBoundaryDefinitionProperties();
             Assert.assertNotNull(properties);
-            Assert.assertNotNull(properties.getXMLFragment());
-            List<PropertyMapping> mappings = properties.getPropertyMappings();
-            Assert.assertNotNull(mappings);
-            mappings.forEach(mapping -> {
-                Assert.assertNotNull(mapping.getServiceTemplatePropertyRef());
-                Assert.assertNotNull(mapping.getTargetObjectRef());
-                Assert.assertNotNull(mapping.getTargetPropertyRef());
-            });
-        }
     }
+
 
     @Test
     public void test_30_provision_application() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);
             Assert.assertEquals(0, client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED).size());
             int startSize = client.getApplicationInstances(application).size();
-            ApplicationInstance instance = client.provisionApplication(application, test.getInput());
+            ApplicationInstance instance = client.provisionApplication(application, this.testUtils.getProvisioningInputParameters());
             Assert.assertNotNull(instance);
             Assert.assertEquals(ServiceTemplateInstanceDTO.StateEnum.CREATED, instance.getState());
             Assert.assertEquals(startSize + 1, client.getApplicationInstances(application).size());
             Assert.assertEquals(1, client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED).size());
-        }
     }
+
 
     @Test
     public void test_40_get_application_instances() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+
+            Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
             for (ApplicationInstance instance : applicationInstances) {
@@ -113,41 +115,26 @@ public class ContainerClientTests {
                     Assert.assertEquals(PlanType.MANAGEMENT, plan.getType());
                 }
                 instance.getNodeInstances().forEach(i -> {
-                    if (i.getTemplate().equals("DockerEngine")) {
-                        Assert.assertEquals(i.getProperties().get("DockerEngineURL"), "tcp://dind:2375");
+                    if (i.getTemplate().contains("DockerEngine")) {
+                        Assert.assertEquals("tcp://" + this.testUtils.getDockerHost() + ":2375", i.getProperties().get("DockerEngineURL"));
                     }
-                    if (i.getTemplate().equals("MyTinyToDoDockerContainer")) {
+                    if (i.getTemplate().contains("MyTinyToDoDockerContainer")) {
                         Assert.assertEquals(i.getProperties().get("ContainerPort"), "80");
                     }
                 });
             }
-        }
-    }
 
-    @Test
-    public void test_41_get_service_template_instance_properties() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
-            List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
-            Assert.assertTrue(applicationInstances.size() > 0);
-
-            for (ApplicationInstance instance : applicationInstances) {
-                Map<String,String> result = instance.getProperties();
-                Assert.assertNotNull(result);
-                Assert.assertTrue(result.size() > 0);
-            }
-        }
     }
 
     @Test
     public void test_45_execute_node_operation() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+
+            Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
             Assert.assertEquals(1, applicationInstances.size());
             for (ApplicationInstance instance : applicationInstances) {
                 instance.getNodeInstances().forEach(i -> {
-                    if (i.getTemplate().equals("MyTinyToDoDockerContainer")) {
+                    if (i.getTemplate().contains("MyTinyToDoDockerContainer")) {
                         Map<String, String> input = new HashMap<>();
                         input.put("Script", "ls");
                         Map<String, String> result = client.executeNodeOperation(
@@ -158,8 +145,10 @@ public class ContainerClientTests {
                     }
                 });
             }
-        }
+
     }
+/*
+
 
     @Test
     public void test_50_get_buildplan_instances() {
@@ -170,17 +159,22 @@ public class ContainerClientTests {
             buildPlanInstances.forEach(Assert::assertNotNull);
         }
     }
+    */
+
+
 
     @Test
     public void test_60_terminate_instance() {
-        for (ClientTests.Config.Test test : config.getTests()) {
-            Application application = client.getApplication(test.getName()).orElseThrow(IllegalStateException::new);
+            Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);
             List<ApplicationInstance> applicationInstances = client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED);
+
             Assert.assertEquals(1, applicationInstances.size());
             for (ApplicationInstance instance : applicationInstances) {
-                Assert.assertTrue(client.terminateApplicationInstance(instance));
+                String serviceInstanceUrl = this.testUtils.getServiceInstanceURL(this.containerHost, this.containerPort, this.applicationName, application.getServiceTemplate().getId(), instance.getId());
+                Map<String, String> params = this.testUtils.getTerminationPlanInputParameters(serviceInstanceUrl);
+                Assert.assertTrue(client.terminateApplicationInstance(instance, params));
             }
-        }
+
     }
 
     @Test

@@ -28,7 +28,7 @@ public interface ContainerClient {
 
     Optional<ApplicationInstance> getApplicationInstance(Application application, String id);
 
-    boolean terminateApplicationInstance(ApplicationInstance instance);
+    boolean terminateApplicationInstance(ApplicationInstance instance, Map<String, String> inputParameters);
 
     Map<String, String> executeNodeOperation(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
 }

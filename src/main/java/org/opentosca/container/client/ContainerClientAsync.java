@@ -29,7 +29,7 @@ public interface ContainerClientAsync {
 
     CompletableFuture<Optional<ApplicationInstance>> getApplicationInstanceAsync(Application application, String id);
 
-    CompletableFuture<Boolean> terminateApplicationInstanceAsync(ApplicationInstance instance);
+    CompletableFuture<Boolean> terminateApplicationInstanceAsync(ApplicationInstance instance, Map<String, String> inputParameters);
 
     CompletableFuture<Map<String, String>> executeNodeOperationAsync(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
 }
