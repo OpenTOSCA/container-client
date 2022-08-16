@@ -23,7 +23,8 @@ services:
     ports:
       - '1337:1337'
       - '1883:1883' # MQTT
-      - '8081-8087:8081-8087'
+      - '8081-8083:8081-8083'
+      - '8085-8087:8085-8087'
     environment:
       CONTAINER_HOSTNAME: 172.17.0.1
       ENGINE_IA_HOSTNAME: engine-ia
