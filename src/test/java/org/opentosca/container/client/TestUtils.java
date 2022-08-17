@@ -3,6 +3,8 @@ package org.opentosca.container.client;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.winery.accountability.exceptions.AccountabilityException;
@@ -14,7 +16,6 @@ import org.eclipse.winery.repository.backend.IRepository;
 import org.eclipse.winery.repository.backend.RepositoryFactory;
 import org.eclipse.winery.repository.exceptions.RepositoryCorruptException;
 import org.eclipse.winery.repository.export.CsarExporter;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
@@ -32,7 +33,7 @@ import static org.eclipse.winery.common.Constants.DEFAULT_LOCAL_REPO_NAME;
 
 public class TestUtils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private IRepository fetchRepository(RepositoryConfigurationObject.RepositoryProvider provider, Path repositoryInputPath, String remoteUrl) throws GitAPIException, IOException {
         Path repositoryPath = repositoryInputPath;
