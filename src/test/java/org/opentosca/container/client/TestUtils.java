@@ -16,16 +16,13 @@ import org.eclipse.winery.repository.backend.IRepository;
 import org.eclipse.winery.repository.backend.RepositoryFactory;
 import org.eclipse.winery.repository.exceptions.RepositoryCorruptException;
 import org.eclipse.winery.repository.export.CsarExporter;
-import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -159,7 +156,7 @@ public class TestUtils {
         return inputs;
     }
 
-    public String getServiceInstanceURL(String containerHost, String containerPort,String csarId, String serviceTemplateId, String serviceInstanceId) {
+    public String getServiceInstanceURL(String containerHost, String containerPort, String csarId, String serviceTemplateId, String serviceInstanceId) {
         String url = "http://" + containerHost + ":" + containerPort + "/csars/{csarid}/servicetemplates/{servicetemplateid}/instances";
         return url.replace("{csarid}", csarId).replace("{servicetemplateid}", serviceTemplateId) + "/" + serviceInstanceId;
     }

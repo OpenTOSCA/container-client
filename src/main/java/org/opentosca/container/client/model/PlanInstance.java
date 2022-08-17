@@ -1,14 +1,14 @@
 package org.opentosca.container.client.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.PlanInstanceEventDTO;
 import io.swagger.client.model.PlanInstanceInputDTO;
 import io.swagger.client.model.PlanInstanceOutputDTO;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class PlanInstance {

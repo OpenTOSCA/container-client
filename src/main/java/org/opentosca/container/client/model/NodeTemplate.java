@@ -1,10 +1,10 @@
 package org.opentosca.container.client.model;
 
-import java.util.List;
-
 import io.swagger.client.model.InterfaceDTO;
 import io.swagger.client.model.NodeTemplateDTO;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 public class NodeTemplate {

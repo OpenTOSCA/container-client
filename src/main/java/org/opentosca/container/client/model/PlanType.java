@@ -12,11 +12,6 @@ public enum PlanType {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
     public static PlanType fromString(final String name) {
         if (name != null) {
             for (final PlanType o : PlanType.values()) {
@@ -26,5 +21,10 @@ public enum PlanType {
             }
         }
         throw new IllegalArgumentException("Parameter 'name' does not match an Enum type");
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
     }
 }

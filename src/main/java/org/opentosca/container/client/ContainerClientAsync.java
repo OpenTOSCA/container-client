@@ -1,15 +1,15 @@
 package org.opentosca.container.client;
 
+import io.swagger.client.model.ServiceTemplateInstanceDTO;
+import org.opentosca.container.client.model.Application;
+import org.opentosca.container.client.model.ApplicationInstance;
+import org.opentosca.container.client.model.NodeInstance;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-
-import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import org.opentosca.container.client.model.Application;
-import org.opentosca.container.client.model.ApplicationInstance;
-import org.opentosca.container.client.model.NodeInstance;
 
 public interface ContainerClientAsync {
 

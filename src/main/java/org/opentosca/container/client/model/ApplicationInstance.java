@@ -1,15 +1,15 @@
 package org.opentosca.container.client.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 import io.swagger.client.model.PlanDTO;
 import io.swagger.client.model.PlanInstanceDTO;
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import lombok.Builder;
 import org.joda.time.DateTime;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Builder
 public class ApplicationInstance {

@@ -1,10 +1,10 @@
 package org.opentosca.container.client.model;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import io.swagger.client.model.NodeTemplateInstanceDTO;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class NodeInstance {
