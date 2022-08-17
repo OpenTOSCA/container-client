@@ -24,17 +24,6 @@ jobs:
         java-version: 11
         cache: maven
         distribution: temurin
-    - name: Check out TOSCA internal repository
-      uses: actions/checkout@v2
-      with:
-        repository: OpenTOSCA/tosca-definitions-test-applications
-        ref: 'main'
-        path: 'tosca-definitions-test-applications'
-        lfs: 'true'
-    - name: Copy TOSCA internal repository to tmp
-      run: cp -R $GITHUB_WORKSPACE/tosca-definitions-test-applications /tmp/
-    - name: Show TOSCA internal repository content
-      run: ls -a /tmp/tosca-definitions-test-applications
     - name: Setup Docker Remote API
       run: sudo sed -ie "s@ExecStart=\/usr\/bin\/dockerd -H fd:\/\/@ExecStart=\/usr\/bin\/dockerd -H fd:\/\/ -H tcp:\/\/0.0.0.0:2375 -H unix:///var/run/docker.sock@g" /lib/systemd/system/docker.service
     - name: Reload Daemons
@@ -58,4 +47,5 @@ jobs:
         project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
         coverage-reports: target/site/jacoco-aggregate/jacoco.xml
     - name: Log container run
+      if: failure()
       run: docker logs $(docker ps -q -f "ancestor=opentosca/container:latest")
