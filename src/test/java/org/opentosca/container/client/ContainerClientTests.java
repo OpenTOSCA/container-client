@@ -42,7 +42,7 @@ public class ContainerClientTests {
 
     private ContainerClient client;
 
-    private String containerHost = "localhost";
+    private String containerHost = "172.17.0.1";
     private String containerPort = "1337";
 
     public static final String TESTAPPLICATIONSREPOSITORY = "https://github.com/OpenTOSCA/tosca-definitions-test-applications";
