@@ -23,14 +23,14 @@ import java.util.concurrent.ExecutionException;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ContainerClientTests {
 
-    public static final String TESTAPPLICATIONSREPOSITORY = "https://github.com/OpenTOSCA/tosca-definitions-test-applications";
+    private final String TESTAPPLICATIONSREPOSITORY = "https://github.com/OpenTOSCA/tosca-definitions-test-applications";
     private final Path csarPath;
     private final String applicationName;
-    public QName csarId = new QName("http://opentosca.org/test/applications/servicetemplates", "MyTinyToDo-DockerEngine-Test_w1-wip1");
-    private ContainerClient client;
-    private String containerHost = "localhost";
-    private String containerPort = "1337";
-    private TestUtils testUtils = new TestUtils();
+    private final QName csarId = new QName("http://opentosca.org/test/applications/servicetemplates", "MyTinyToDo-DockerEngine-Test_w1-wip1");
+    private final ContainerClient client;
+    private final String containerHost = "192.168.0.239";
+    private final String containerPort = "1337";
+    private final TestUtils testUtils = new TestUtils();
 
     public ContainerClientTests() throws GitAPIException, AccountabilityException, RepositoryCorruptException, IOException, ExecutionException, InterruptedException {
         this.client = ContainerClientBuilder.builder()

@@ -65,7 +65,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 CsarListDTO csarListDTO = this.client.getCsars();
                 if (csarListDTO.getCsars() != null) {
-                    for (CsarDTO csar : this.client.getCsars().getCsars()) {
+                    for (CsarDTO csar : csarListDTO.getCsars()) {
                         applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
                     }
                 }
