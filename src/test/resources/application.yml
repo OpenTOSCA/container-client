@@ -1,8 +1,0 @@
-csar:
-  hostname: localhost
-  path: c:/temp
-  tests:
-    - name: MyTinyToDo_Bare_Docker.csar
-      input:
-        DockerEngineURL: tcp://dind:2375
-        ApplicationPort: 9990

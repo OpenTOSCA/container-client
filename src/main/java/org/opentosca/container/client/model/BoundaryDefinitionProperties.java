@@ -1,10 +1,10 @@
 package org.opentosca.container.client.model;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import io.swagger.client.model.PropertiesDTO;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BoundaryDefinitionProperties {

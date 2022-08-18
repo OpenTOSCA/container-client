@@ -1,9 +1,8 @@
 package org.opentosca.container.client;
 
-import java.util.concurrent.TimeUnit;
-
-import org.opentosca.container.client.impl.SmartServiceSwaggerContainerClient;
 import org.opentosca.container.client.impl.SwaggerContainerClient;
+
+import java.util.concurrent.TimeUnit;
 
 public final class ContainerClientBuilder {
 
@@ -44,13 +43,5 @@ public final class ContainerClientBuilder {
 
     public ContainerClientAsync buildAsync() {
         return new SwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
-    }
-
-    public SmartServiceContainerClient buildSmart() {
-        return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
-    }
-
-    public SmartServiceContainerClientAsync buildSmartAsync() {
-        return new SmartServiceSwaggerContainerClient("http://" + this.hostname + ":" + this.port, this.timeout);
     }
 }

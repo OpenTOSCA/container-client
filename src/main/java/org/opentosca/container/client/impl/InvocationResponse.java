@@ -1,8 +1,8 @@
 package org.opentosca.container.client.impl;
 
-import java.util.Map;
-
 import lombok.Data;
+
+import java.util.Map;
 
 @Data
 public class InvocationResponse {

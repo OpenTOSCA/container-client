@@ -1,48 +1,10 @@
 package org.opentosca.container.client.impl;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.StringReader;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.CsarDTO;
-import io.swagger.client.model.InterfaceDTO;
-import io.swagger.client.model.NodeTemplateDTO;
-import io.swagger.client.model.NodeTemplateInstanceDTO;
-import io.swagger.client.model.PlanDTO;
-import io.swagger.client.model.PlanInstanceDTO;
-import io.swagger.client.model.PlanInstanceListDTO;
-import io.swagger.client.model.PropertiesDTO;
-import io.swagger.client.model.ServiceTemplateDTO;
-import io.swagger.client.model.ServiceTemplateInstanceDTO;
-import io.swagger.client.model.TParameter;
+import io.swagger.client.model.*;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.opentosca.container.client.ContainerClient;
@@ -54,6 +16,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.StringReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.opentosca.container.client.impl.Exceptions.rethrow;
 
@@ -78,8 +63,11 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         executor.submit(() -> {
             List<Application> applications = new ArrayList<>();
             try {
-                for (CsarDTO csar : this.client.getCsars().getCsars()) {
-                    applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
+                CsarListDTO csarListDTO = this.client.getCsars();
+                if (csarListDTO.getCsars() != null) {
+                    for (CsarDTO csar : csarListDTO.getCsars()) {
+                        applications.add(getApplication(csar.getId()).orElseThrow(IllegalStateException::new));
+                    }
                 }
                 future.complete(applications);
             } catch (Exception e) {
@@ -197,7 +185,6 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                     TParameter p = new TParameter();
                     p.setName(e.getKey());
                     p.setValue(e.getValue());
-                    p.setRequired(TParameter.RequiredEnum.YES);
                     p.setType("String");
                     return p;
                 }).collect(Collectors.toList());
@@ -234,11 +221,13 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
             try {
                 String csarId = application.getId();
                 String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
-                for (ServiceTemplateInstanceDTO dto : this.client.getServiceTemplateInstances(csarId, serviceTemplateId)
-                        .getServiceTemplateInstances()) {
-                    applicationInstances.add(getApplicationInstance(application,
-                            dto.getId().toString())
-                            .orElseThrow(IllegalStateException::new));
+                ServiceTemplateInstanceListDTO serviceTemplateInstanceListDTO = this.client.getServiceTemplateInstances(csarId, serviceTemplateId);
+                if (serviceTemplateInstanceListDTO.getServiceTemplateInstances() != null) {
+                    for (ServiceTemplateInstanceDTO dto : serviceTemplateInstanceListDTO.getServiceTemplateInstances()) {
+                        applicationInstances.add(getApplicationInstance(application,
+                                dto.getId().toString())
+                                .orElseThrow(IllegalStateException::new));
+                    }
                 }
                 future.complete(applicationInstances.stream().filter(a -> validStates.contains(a.getState()))
                         .collect(Collectors.toList()));
@@ -268,7 +257,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 application.getNodeTemplates().forEach(rethrow(nodeTemplate -> {
                     String nodeTemplateId = encodeValue(nodeTemplate.getId());
                     nodeTemplateInstances.addAll(this.client.getNodeTemplateInstances(nodeTemplateId, csarId,
-                            serviceTemplateId, null, null)
+                                    serviceTemplateId, null, null)
                             .getNodeTemplateInstances().stream()
                             .filter(n -> n.getServiceTemplateInstanceId()
                                     .equals(serviceTemplateInstance.getId()))
@@ -301,8 +290,9 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
         return future;
     }
 
+
     @Override
-    public CompletableFuture<Boolean> terminateApplicationInstanceAsync(ApplicationInstance instance) {
+    public CompletableFuture<Boolean> terminateApplicationInstanceAsync(ApplicationInstance instance, Map<String, String> inputParameters) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         executor.submit(() -> {
             try {
@@ -312,8 +302,16 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 String serviceTemplateId = encodeValue(application.getServiceTemplate().getId());
                 Long id = Long.valueOf(instance.getId());
 
+                List<TParameter> parameters = inputParameters.entrySet().stream().map(e -> {
+                    TParameter p = new TParameter();
+                    p.setName(e.getKey());
+                    p.setValue(e.getValue());
+                    p.setType("String");
+                    return p;
+                }).collect(Collectors.toList());
+
                 String correlationId =
-                        this.client.invokeManagementPlan(planId, new ArrayList<>(), csarId, serviceTemplateId, id);
+                        this.client.invokeManagementPlan(planId, parameters, csarId, serviceTemplateId, id);
                 PlanInstanceDTO pi = waitForFinishedPlan(planId, correlationId, csarId, serviceTemplateId, id);
                 if (pi == null) {
                     throw new RuntimeException("Could not determine plan instance");
@@ -475,9 +473,9 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
     }
 
     @Override
-    public boolean terminateApplicationInstance(ApplicationInstance instance) {
+    public boolean terminateApplicationInstance(ApplicationInstance instance, Map<String, String> inputParameters) {
         try {
-            return terminateApplicationInstanceAsync(instance).get();
+            return terminateApplicationInstanceAsync(instance, inputParameters).get();
         } catch (Exception e) {
             logger.error("Error while waiting for future to be completed");
             throw new RuntimeException(e);

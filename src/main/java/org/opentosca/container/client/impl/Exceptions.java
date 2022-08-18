@@ -6,31 +6,11 @@ import java.util.function.Supplier;
 
 public abstract class Exceptions {
 
-    @FunctionalInterface
-    public interface Consumer_WithExceptions<T> {
-        void accept(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface Function_WithExceptions<T, R> {
-        R apply(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface Supplier_WithExceptions<T> {
-        T get() throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface Runnable_WithExceptions {
-        void accept() throws Exception;
-    }
-
     /**
      * Rethrows an exception as unchecked.
-     *
+     * <p>
      * {@code .forEach(rethrow(name -> System.out.println(Class.forName(name)))) }
-     *
+     * <p>
      * {@code .forEach(rethrow(ClassNameUtil::println)) }
      *
      * @param consumer The {@link Consumer_WithExceptions} consumer
@@ -49,9 +29,9 @@ public abstract class Exceptions {
 
     /**
      * Rethrows an exception as unchecked.
-     *
+     * <p>
      * {@code .map(rethrow(name -> Class.forName(name))) }
-     *
+     * <p>
      * {@code .map(rethrow(Class::forName)) }
      *
      * @param function The {@link Function_WithExceptions} function
@@ -72,7 +52,7 @@ public abstract class Exceptions {
 
     /**
      * Rethrows an exception as unchecked.
-     *
+     * <p>
      * {@code rethrow(() -> new StringJoiner(new String(new byte[]{77, 97, 114, 107}, "UTF-8"))) }
      *
      * @param supplier The {@link Supplier_WithExceptions} supplier
@@ -92,7 +72,7 @@ public abstract class Exceptions {
 
     /**
      * Unchecks an expression.
-     *
+     * <p>
      * {@code uncheck(() -> Class.forName("xxx")); }
      *
      * @param runnable The {@link Runnable_WithExceptions} runnable
@@ -107,7 +87,7 @@ public abstract class Exceptions {
 
     /**
      * Unchecks an expression.
-     *
+     * <p>
      * {@code uncheck(() -> Class.forName("xxx")); }
      *
      * @param supplier The {@link Supplier_WithExceptions} supplier
@@ -125,7 +105,7 @@ public abstract class Exceptions {
 
     /**
      * Unchecks an expression.
-     *
+     * <p>
      * {@code uncheck(Class::forName, "xxx"); }
      *
      * @param function The {@link Function_WithExceptions} function
@@ -146,5 +126,25 @@ public abstract class Exceptions {
     @SuppressWarnings("unchecked")
     private static <E extends Throwable> void throwAsUnchecked(final Exception exception) throws E {
         throw (E) exception;
+    }
+
+    @FunctionalInterface
+    public interface Consumer_WithExceptions<T> {
+        void accept(T t) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Function_WithExceptions<T, R> {
+        R apply(T t) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Supplier_WithExceptions<T> {
+        T get() throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Runnable_WithExceptions {
+        void accept() throws Exception;
     }
 }

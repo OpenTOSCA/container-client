@@ -1,14 +1,14 @@
 package org.opentosca.container.client;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import io.swagger.client.model.ServiceTemplateInstanceDTO;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 import org.opentosca.container.client.model.NodeInstance;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public interface ContainerClient {
 
@@ -28,7 +28,7 @@ public interface ContainerClient {
 
     Optional<ApplicationInstance> getApplicationInstance(Application application, String id);
 
-    boolean terminateApplicationInstance(ApplicationInstance instance);
+    boolean terminateApplicationInstance(ApplicationInstance instance, Map<String, String> inputParameters);
 
     Map<String, String> executeNodeOperation(ApplicationInstance instance, NodeInstance node, String interfaceName, String operationName, Map<String, String> parameters);
 }

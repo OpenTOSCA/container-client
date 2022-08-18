@@ -1,11 +1,11 @@
 package org.opentosca.container.client.model;
 
+import io.swagger.client.model.OperationDTO;
+import lombok.RequiredArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import io.swagger.client.model.OperationDTO;
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class Operation {
