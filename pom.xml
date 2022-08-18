@@ -27,7 +27,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <swagger.version>1.5.15</swagger.version>
-        <jersey.version>2.30.1</jersey.version>
+        <jersey.version>2.34</jersey.version>
         <jackson.version>2.11.1</jackson.version>
         <migbase64.version>2.2</migbase64.version>
         <winery.version>ustutt-SNAPSHOT</winery.version>
