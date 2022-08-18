@@ -28,7 +28,7 @@ public class ContainerClientTests {
     private final String applicationName;
     private final QName csarId = new QName("http://opentosca.org/test/applications/servicetemplates", "MyTinyToDo-DockerEngine-Test_w1-wip1");
     private final ContainerClient client;
-    private final String containerHost = "192.168.0.239";
+    private final String containerHost = "localhost";
     private final String containerPort = "1337";
     private final TestUtils testUtils = new TestUtils();
 
