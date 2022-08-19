@@ -16,6 +16,8 @@ public class Application {
 
     private final List<NodeTemplateDTO> nodeTemplates;
 
+    private final List<RelationshipTemplateDTO> relationshipTemplates;
+
     private final PlanDTO buildPlan;
 
     private final List<PlanInstanceDTO> buildPlanInstances;
@@ -57,6 +59,11 @@ public class Application {
     public List<NodeTemplate> getNodeTemplates() {
         Objects.requireNonNull(nodeTemplates);
         return nodeTemplates.stream().map(NodeTemplate::new).collect(Collectors.toList());
+    }
+
+    public List<RelationshipTemplate> getRelationshipTemplate() {
+        Objects.requireNonNull(relationshipTemplates);
+        return relationshipTemplates.stream().map(RelationshipTemplate::new).collect(Collectors.toList());
     }
 
     public Plan getBuildPlan() {

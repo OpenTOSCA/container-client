@@ -22,6 +22,8 @@ public class ApplicationInstance {
 
     private final List<NodeInstance> nodeInstances;
 
+    private final List<RelationInstance> relationInstances;
+
     private final List<PlanDTO> managementPlans;
 
     private final List<PlanInstanceDTO> managementPlanInstances;
@@ -40,6 +42,10 @@ public class ApplicationInstance {
 
     public List<NodeInstance> getNodeInstances() {
         return nodeInstances;
+    }
+
+    public List<RelationInstance> getRelationInstances() {
+        return this.relationInstances;
     }
 
     public List<Plan> getManagementPlans() {
