@@ -99,6 +99,7 @@ public class ContainerClientTests {
                     Assert.assertEquals(i.getProperties().get("ContainerPort"), "80");
                 }
             });
+            Assert.assertTrue(!instance.getRelationInstances().isEmpty());
         }
     }
 
