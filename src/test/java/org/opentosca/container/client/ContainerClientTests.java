@@ -80,7 +80,6 @@ public class ContainerClientTests {
         Assert.assertEquals(1, client.getApplicationInstances(application, ServiceTemplateInstanceDTO.StateEnum.CREATED).size());
     }
 
-
     @Test
     public void test_40_get_application_instances() {
         Application application = client.getApplication(this.applicationName).orElseThrow(IllegalStateException::new);

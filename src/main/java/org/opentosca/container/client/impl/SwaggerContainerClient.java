@@ -12,6 +12,7 @@ import org.opentosca.container.client.ContainerClientAsync;
 import org.opentosca.container.client.model.Application;
 import org.opentosca.container.client.model.ApplicationInstance;
 import org.opentosca.container.client.model.NodeInstance;
+import org.opentosca.container.client.model.RelationInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
@@ -94,6 +95,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                 PropertiesDTO boundaryProperties = this.client.getBoundaryDefinitionProperties(csar.getId(), serviceTemplateId);
                 List<NodeTemplateDTO> nodeTemplates =
                         this.client.getNodeTemplates(csar.getId(), serviceTemplateId).getNodeTemplates();
+                List<RelationshipTemplateDTO> relationshipTemplates = this.client.getRelationshipTemplates(csar.getId(), serviceTemplateId).getRelationshipTemplates();
                 PlanInstanceListDTO planInstanceList =
                         this.client.getBuildPlanInstances(buildPlan.getId(), csar.getId(), serviceTemplateId);
                 List<PlanInstanceDTO> buildPlanInstances = planInstanceList.getPlanInstances();
@@ -103,6 +105,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                                 .csar(csar)
                                 .serviceTemplate(serviceTemplate)
                                 .nodeTemplates(nodeTemplates)
+                                .relationshipTemplates(relationshipTemplates)
                                 .buildPlanInstances(buildPlanInstances)
                                 .buildPlan(buildPlan)
                                 .interfaces(interfaces)
@@ -263,6 +266,13 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                                     .equals(serviceTemplateInstance.getId()))
                             .collect(Collectors.toList()));
                 }));
+                List<RelationshipTemplateInstanceDTO> relationshipTemplateInstances = new ArrayList<>();
+
+                application.getRelationshipTemplate().forEach(rethrow(relationshipTemplate -> {
+                    String relationshipTemplateId = encodeValue(relationshipTemplate.getId());
+                    relationshipTemplateInstances.addAll(this.client.getRelationshipTemplateInstances(csarId, serviceTemplateId, relationshipTemplateId, null, null).getRelationshipTemplateInstances());
+                }));
+
                 List<NodeInstance> nodeInstances = nodeTemplateInstances.stream().map(rethrow(n -> {
                     String nodeTemplateId = encodeValue(n.getNodeTemplateId());
                     Map<String, Object> properties =
@@ -270,12 +280,16 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                                     n.getId());
                     return new NodeInstance(n, properties);
                 })).collect(Collectors.toList());
+
+                List<RelationInstance> relationInstances = relationshipTemplateInstances.stream().map(r -> new RelationInstance(r)).collect(Collectors.toList());
+
                 ApplicationInstance applicationInstance =
                         ApplicationInstance.builder()
                                 .application(application)
                                 .properties(serviceTemplateInstanceProps)
                                 .serviceTemplateInstance(serviceTemplateInstance)
                                 .nodeInstances(nodeInstances)
+                                .relationInstances(relationInstances)
                                 .managementPlans(plans)
                                 .build();
                 future.complete(Optional.of(applicationInstance));
