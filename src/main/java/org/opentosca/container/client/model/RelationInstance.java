@@ -26,4 +26,12 @@ public class RelationInstance {
     public String getTemplateType() {
         return relationshipTemplateInstance.getRelationshipTemplateType();
     }
+
+    public String getSourceId() {
+        return String.valueOf(this.relationshipTemplateInstance.getSourceNodeTemplateInstanceId());
+    }
+
+    public String getTargetId() {
+        return String.valueOf(this.relationshipTemplateInstance.getTargetNodeTemplateInstanceId());
+    }
 }
