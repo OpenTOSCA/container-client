@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -34,7 +35,7 @@ public class ContainerClientTests {
 
     public ContainerClientTests() throws GitAPIException, AccountabilityException, RepositoryCorruptException, IOException, ExecutionException, InterruptedException {
         this.client = ContainerClientBuilder.builder()
-                .withHostname(this.containerHost)
+                .withHostname(this.containerHost).withTimeout(100000, TimeUnit.MILLISECONDS)
                 .build();
         this.csarPath = testUtils.fetchCsar(TESTAPPLICATIONSREPOSITORY, csarId);
         this.applicationName = this.csarPath.getFileName().toString();

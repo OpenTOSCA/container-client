@@ -553,7 +553,7 @@ public class SwaggerContainerClient implements ContainerClient, ContainerClientA
                                                 Long id) {
         PlanInstanceDTO pi = null;
         final long sleep = 5000;
-        final long timeout = TimeUnit.MINUTES.toMillis(10);
+        final long timeout = Long.valueOf(this.client.getApiClient().getConnectTimeout());
         long waited = 0;
         while (true) {
             boolean finished;
